@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inicio de Sesión</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #F4F4F4; font-family: 'Roboto', sans-serif; }
+    .card-login {
+      max-width: 420px; margin: 60px auto; background: #fff;
+      border-radius: 20px; padding: 40px 36px; box-shadow: 0 4px 20px rgba(0,0,0,.08);
+    }
+    .logo { width: 80px; display: block; margin: 0 auto 24px; }
+    h2 { font-size: 32px; font-weight: 500; margin-bottom: 2px; }
+    .subtitulo { font-size: 20px; color: #555; margin-bottom: 28px; }
+    .form-control {
+      border-radius: 10px; border: 1.5px solid #ddd;
+      padding: 12px 14px; font-size: 16px; margin-bottom: 14px;
+    }
+    .form-control:focus { border-color: #FD8223; box-shadow: 0 0 0 3px rgba(253,130,35,.15); }
+    .form-control.is-invalid { border-color: #CD1800; }
+    .error-msg { color: #CD1800; font-size: 14px; margin-top: -10px; margin-bottom: 12px; }
+    .olvide { font-size: 14px; color: #555; margin-bottom: 16px; }
+    .olvide a { color: #FD8223; text-decoration: none; }
+    .btn-continuar {
+      width: 100%; background: #FD8223; color: #fff;
+      border: none; border-radius: 12px; padding: 14px; font-size: 18px; font-weight: 500;
+    }
+    .btn-continuar:hover { background: #e06e10; }
+    .pie { text-align: center; margin-top: 16px; font-size: 15px; color: #555; }
+    .pie a { color: #FD8223; font-weight: 500; text-decoration: none; }
+    .alerta-ok { background: #d4edda; color: #155724; border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; font-size: 15px; }
+  </style>
+</head>
+<body>
+  <div class="card-login">
+    <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
+    <h2>Inicio de Sesión</h2>
+    <p class="subtitulo">Comencemos</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alerta-ok">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+      <input type="email" name="email" class="form-control {% if error %}is-invalid{% endif %}" placeholder="ejemplo@gmail.com">
+      <input type="password" name="contrasena" class="form-control {% if error %}is-invalid{% endif %}" placeholder="Contraseña">
+      {% if error %}<p class="error-msg">{{ error }}</p>{% endif %}
+
+      <p class="olvide"><a href="{{ url_for('olvide_contrasena') }}">¿Olvidaste tu contraseña?</a></p>
+      <button type="submit" class="btn-continuar">Continuar</button>
+    </form>
+
+    <p class="pie">¿Usuario nuevo? <a href="{{ url_for('registro') }}">Registrate</a></p>
+  </div>
+</body>
+</html>
