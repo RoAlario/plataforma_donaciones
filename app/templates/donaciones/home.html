@@ -42,17 +42,72 @@
           </form>
         </div>
 
-        <!-- Iconos derecha -->
-        <div class="flex items-center gap-4 ml-auto">
-          <button class="text-[#a63b00] hover:opacity-80 transition-opacity">
-            <span class="material-symbols-outlined">notifications</span>
-          </button>
-          <div class="w-10 h-10 rounded-full bg-[#f27036] flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:opacity-80 transition-opacity">
-            {{ usuario.nombre[0].upper() }}
-          </div>
-        </div>
+       <!-- Iconos derecha -->
+<div class="flex items-center gap-4 ml-auto">
+  <button class="text-[#a63b00] hover:opacity-80 transition-opacity">
+    <span class="material-symbols-outlined">notifications</span>
+  </button>
+
+  <!-- Perfil con dropdown -->
+  <div class="relative" id="perfil-menu">
+
+    <!-- Botón -->
+    <button onclick="toggleDropdown()"
+            class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+      <div class="w-10 h-10 rounded-full bg-[#f27036] flex items-center justify-center text-white font-bold text-sm">
+        {{ usuario.nombre[0].upper() }}
+      </div>
+      <span class="hidden md:block text-sm font-medium text-[#121c2a]">{{ usuario.nombre }}</span>
+      <span class="material-symbols-outlined text-[#584239] text-base">expand_more</span>
+    </button>
+
+    <!-- Dropdown -->
+    <div id="dropdown"
+         class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-[#dfc0b4]/50 z-50 overflow-hidden">
+
+      <!-- Header del usuario -->
+      <div class="px-4 py-3 border-b border-[#dfc0b4]/50">
+        <p class="text-sm font-semibold text-[#121c2a]">{{ usuario.nombre }}</p>
+        <p class="text-xs text-[#584239] truncate">{{ usuario.email }}</p>
+      </div>
+
+      <!-- Opciones -->
+      <div class="py-1">
+        <a href="#"
+           class="flex items-center gap-3 px-4 py-2.5 text-sm text-[#121c2a] hover:bg-[#f2e0c8] transition-colors">
+          <span class="material-symbols-outlined text-[#a63b00] text-xl">volunteer_activism</span>
+          Mis donaciones
+        </a>
+        <a href="#"
+           class="flex items-center gap-3 px-4 py-2.5 text-sm text-[#121c2a] hover:bg-[#f2e0c8] transition-colors">
+          <span class="material-symbols-outlined text-[#a63b00] text-xl">inbox</span>
+          Solicitudes
+        </a>
+        <a href="#"
+           class="flex items-center gap-3 px-4 py-2.5 text-sm text-[#121c2a] hover:bg-[#f2e0c8] transition-colors">
+          <span class="material-symbols-outlined text-[#a63b00] text-xl">settings</span>
+          Ajustes
+        </a>
+        <a href="{{ url_for('campana.solicitar_campana') }}"
+          class="flex items-center gap-3 px-4 py-2.5 text-sm text-[#121c2a] hover:bg-[#f2e0c8] transition-colors">
+          <span class="material-symbols-outlined text-[#a63b00] text-xl">campaign</span>
+            Solicitar Campaña
+        </a>
 
       </div>
+
+      <!-- Salir -->
+      <div class="border-t border-[#dfc0b4]/50 py-1">
+        <a href="{{ url_for('auth.logout') }}"
+           class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
+          <span class="material-symbols-outlined text-xl">logout</span>
+          Salir
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
 
       <!-- Buscador mobile -->
       <div class="md:hidden mt-4">
@@ -200,6 +255,21 @@
       <span class="text-xs">Perfil</span>
     </a>
   </nav>
+
+  // Script para dropdown del perfil
+  <script>
+  function toggleDropdown() {
+    document.getElementById('dropdown').classList.toggle('hidden');
+  }
+
+  // Cierra el dropdown si se hace click afuera
+  document.addEventListener('click', function(e) {
+    const menu = document.getElementById('perfil-menu');
+    if (!menu.contains(e.target)) {
+      document.getElementById('dropdown').classList.add('hidden');
+    }
+  });
+</script>
 
 </body>
 </html>

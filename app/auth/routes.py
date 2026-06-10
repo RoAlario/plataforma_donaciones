@@ -36,9 +36,6 @@ def enviar_email(destinatario, asunto, cuerpo):
 
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
-    
-    
-    
     errores = {}
     
     if request.method == 'POST':
@@ -175,12 +172,11 @@ def olvide_contrasena():
             try:
                 enviar_email(email, 'Código para restablecer contraseña',
                     f'Tu código es: {codigo}')
-                exito = 'Te enviamos un código a tu email.'
+                session['email_recuperar'] = email
+                return redirect(url_for('auth.verificar_recuperacion'))
             except Exception as e:
                 print(f'[MAIL ERROR] {e}')
-                exito = 'Te enviamos un código a tu email.'
-            session['email_recuperar'] = email
-            return redirect(url_for('auth.verificar_recuperacion'))
+                error = 'Hubo un error al enviar el email. Intentá de nuevo .'
     return render_template('olvide_contrasena.html', error=error, exito=exito)
 
 @auth_bp.route('/verificar-recuperacion', methods=['GET', 'POST'])
@@ -259,7 +255,6 @@ def requiere_campania(f):
             return redirect(url_for('donaciones.home'))
         return f(*args, **kwargs)
     return decorador
-
 
 @auth_bp.route('/logout')
 def logout():

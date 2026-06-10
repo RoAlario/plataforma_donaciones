@@ -25,6 +25,9 @@ def create_app():
     app.register_blueprint(auth_bp)
     
     from app.donaciones.routes import donaciones_bp
-    app.register_blueprint(donaciones_bp)   
+    app.register_blueprint(donaciones_bp)
+    
+    from app.routes import campana_bp
+    app.register_blueprint(campana_bp)
 
     return app
