@@ -50,11 +50,11 @@
       <input type="password" name="contrasena" class="form-control {% if error %}is-invalid{% endif %}" placeholder="Contraseña">
       {% if error %}<p class="error-msg">{{ error }}</p>{% endif %}
 
-      <p class="olvide"><a href="{{ url_for('olvide_contrasena') }}">¿Olvidaste tu contraseña?</a></p>
+      <p class="olvide"><a href="{{ url_for('auth.olvide_contrasena') }}">¿Olvidaste tu contraseña?</a></p>
       <button type="submit" class="btn-continuar">Continuar</button>
     </form>
 
-    <p class="pie">¿Usuario nuevo? <a href="{{ url_for('registro') }}">Registrate</a></p>
+    <p class="pie">¿Usuario nuevo? <a href="{{ url_for('auth.registro') }}">Registrate</a></p>
   </div>
 </body>
 </html>

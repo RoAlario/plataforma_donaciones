@@ -61,7 +61,7 @@
     <h2>Registro</h2>
     <p class="subtitulo">para comenzar</p>
 
-    <form method="POST" action="{{ url_for('registro') }}" novalidate>
+    <form method="POST" action="{{ url_for('auth.registro') }}" novalidate>
 
       <!-- Nombre -->
       <input type="text" name="nombre"
@@ -115,7 +115,7 @@
       <button type="submit" class="btn-registrar">Registrarme</button>
     </form>
 
-    <p class="pie">¿Ya tenés usuario? <a href="{{ url_for('login') }}">Iniciar Sesión</a></p>
+    <p class="pie">¿Ya tenés usuario? <a href="{{ url_for('auth.login') }}">Iniciar Sesión</a></p>
   </div>
 </body>
 </html>
