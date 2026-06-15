@@ -4,11 +4,11 @@ import sqlite3
 conexion = sqlite3.connect('instance/plataforma.db')
 cursor = conexion.cursor()
 
-# Dar la orden de actualizar el número de rol a 1
+# Actualizar el número de rol a 1
 cursor.execute("UPDATE usuario SET id_rol = 1 WHERE email = 'utnfrm.10@gmail.com'")
 
 # Guardar los cambios y cerrar
 conexion.commit()
 conexion.close()
 
-print("¡Listo! Tu usuario ahora es Admin.")
+print("El usuario ahora es admin")

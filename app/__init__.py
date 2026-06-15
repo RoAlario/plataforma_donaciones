@@ -1,10 +1,20 @@
 from flask import Flask
 from app.extensions import db, mail
+import os
 
 def create_app():
     app = Flask(__name__)
 
     app.secret_key = 'clave_secreta_cambiar'
+    import os
+
+def create_app():
+    app = Flask(__name__)
+
+    app.secret_key = 'clave_secreta_cambiar'
+    app.config['UPLOAD_FOLDER'] = os.path.join('app', 'static', 'fotos')   # ← agregá
+    app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024                     # ← agregá (máx 2MB)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///plataforma.db'
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///plataforma.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['MAIL_SERVER']   = 'smtp.gmail.com'

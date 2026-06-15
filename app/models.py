@@ -29,6 +29,7 @@ class Usuario(db.Model):
     fechaBajaUsuario = db.Column(db.DateTime, nullable=True)
     cantDonaciones   = db.Column(db.Integer, default=0)
     codigoVerif      = db.Column(db.String(6),  nullable=True)
+    foto_perfil = db.Column(db.String(200), nullable=True)
 
     # ── Atributo campañas (False por defecto) ──────────────────────────────
     puedeCrearCampanias = db.Column(db.Boolean, default=False, nullable=False)

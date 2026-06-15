@@ -6,6 +6,13 @@ from app.extensions import db, mail
 from app.models import Usuario, Rol
 import random, string, re
 
+import os
+from werkzeug.utils import secure_filename
+
+EXTENSIONES_PERMITIDAS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def extension_valida(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in EXTENSIONES_PERMITIDAS
 auth_bp = Blueprint('auth', __name__)
 
 def generar_codigo():
@@ -29,7 +36,11 @@ def enviar_email(destinatario, asunto, cuerpo):
 
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
+    
+    
+    
     errores = {}
+    
     if request.method == 'POST':
         nombre    = request.form.get('nombre', '').strip()
         email     = request.form.get('email', '').strip()
@@ -38,8 +49,8 @@ def registro():
         contra    = request.form.get('contrasena', '')
         contra2   = request.form.get('repetir_contrasena', '')
 
-        if not nombre or len(nombre) < 2:
-            errores['nombre'] = 'El nombre debe tener al menos 2 caracteres.'
+        if not nombre or len(nombre) < 3:
+            errores['nombre'] = 'El nombre debe tener al menos 3 caracteres.'
         if not email:
             errores['email'] = 'El email es obligatorio.'
         elif not es_email_valido(email):
@@ -48,11 +59,26 @@ def registro():
             errores['email'] = 'El correo electrónico ingresado ya se encuentra vinculado a una cuenta activa.'
         if not telefono or not es_telefono_valido(telefono):
             errores['telefono'] = 'El teléfono debe tener entre 7 y 14 dígitos.'
+        if not ubicacion:
+            errores['ubicacion'] = 'La ubicación es obligatoria.'
         if not contra or len(contra) < 6:
             errores['contrasena'] = 'La contraseña debe tener al menos 6 caracteres.'
         elif contra != contra2:
             errores['repetir_contrasena'] = 'Las contraseñas no coinciden.'
 
+        # Foto de perfil (opcional)
+        from flask import current_app
+        foto_nombre = None
+        foto = request.files.get('foto_perfil')
+        if foto and foto.filename != '':
+            if extension_valida(foto.filename):
+                foto_nombre = secure_filename(foto.filename)
+                carpeta = current_app.config['UPLOAD_FOLDER']
+                os.makedirs(carpeta, exist_ok=True)
+                foto.save(os.path.join(carpeta, foto_nombre))
+            else:
+                errores['foto_perfil'] = 'Solo se permiten imágenes (jpg, png, gif).'
+                
         if errores:
             return render_template('registro.html', errores=errores,
                                    valores={'nombre': nombre, 'email': email,
@@ -63,7 +89,9 @@ def registro():
             'nombre': nombre, 'email': email, 'telefono': telefono,
             'ubicacion': ubicacion, 'contrasena': generate_password_hash(contra),
             'codigo': codigo,
+            'foto_perfil': foto_nombre,
         }
+        
         try:
             enviar_email(email, 'Verificá tu cuenta',
                 f'Tu código de verificación es: {codigo}')
@@ -89,7 +117,9 @@ def verificar():
                 telefono=pendiente['telefono'], ubicacion=pendiente['ubicacion'],
                 contrasena=pendiente['contrasena'], id_rol=rol_usuario.id_rol,
                 puedeCrearCampanias=False,
+                foto_perfil=pendiente.get('foto_perfil'),
             )
+            
             db.session.add(nuevo)
             db.session.commit()
             session.pop('registro_pendiente', None)
