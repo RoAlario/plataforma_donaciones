@@ -155,7 +155,7 @@ def login():
             error = 'Email o contraseña incorrectos.'
         else:
             session['usuario_id'] = usuario.codUsuario
-            flash(f'¡Bienvenido/a, {usuario.nombre}!', 'success')
+            flash('¡Bienvenido/a!', 'success')
             return redirect(url_for('auth.home'))
     return render_template('login.html', error=error)
 
