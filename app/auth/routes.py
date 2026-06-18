@@ -156,7 +156,7 @@ def login():
         else:
             session['usuario_id'] = usuario.codUsuario
             flash('¡Bienvenido/a!', 'success')
-            return redirect(url_for('auth.home'))
+            return redirect(url_for('donaciones.home'))
     return render_template('login.html', error=error)
 
 @auth_bp.route('/olvide-contrasena', methods=['GET', 'POST'])
@@ -225,14 +225,6 @@ def nueva_contrasena():
             return redirect(url_for('auth.login'))
     return render_template('nueva_contrasena.html', errores=errores)
 
-@auth_bp.route('/home')
-def home():
-    usuario_id = session.get('usuario_id')
-    if not usuario_id:
-        return redirect(url_for('auth.login'))
-    usuario = Usuario.query.get(usuario_id)
-    return f'<h2>Hola {usuario.nombre}, bienvenido/a!</h2>'
-
 def login_requerido(f):
     @wraps(f)
     def decorador(*args, **kwargs):
@@ -251,7 +243,7 @@ def requiere_admin(f):
         usuario = Usuario.query.get(usuario_id)
         if not usuario or not usuario.es_admin():
             flash('No tenés permisos para acceder a esa sección.', 'error')
-            return redirect(url_for('auth.home'))
+            return redirect(url_for('donaciones.home'))
         return f(*args, **kwargs)
     return decorador
 
@@ -264,6 +256,6 @@ def requiere_campania(f):
         usuario = Usuario.query.get(usuario_id)
         if not usuario or not usuario.puedeCrearCampanias:
             flash('No tenés permisos para crear campañas.', 'error')
-            return redirect(url_for('auth.home'))
+            return redirect(url_for('donaciones.home'))
         return f(*args, **kwargs)
     return decorador

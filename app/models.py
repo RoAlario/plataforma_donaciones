@@ -46,3 +46,40 @@ class Usuario(db.Model):
 
     def es_usuario(self):
         return self.rol.nombre == 'Usuario'
+    
+class Categoria(db.Model):
+    __tablename__ = 'categoria'
+    codCategoria       = db.Column(db.Integer, primary_key=True)
+    nombreCategoria    = db.Column(db.String(20), nullable=False, unique=True)
+    fechaAltaCategoria = db.Column(db.DateTime, default=datetime.utcnow)
+    fechaBajaCategoria = db.Column(db.DateTime, nullable=True)
+    publicaciones      = db.relationship('Publicacion', backref='categoria')
+
+class Publicacion(db.Model):
+    __tablename__ = 'publicacion'
+    nroPublicacion          = db.Column(db.Integer, primary_key=True)
+    titulo                  = db.Column(db.String(50), nullable=False)
+    descripcionPublicacion  = db.Column(db.String(100), nullable=True)
+    ubicacion               = db.Column(db.String(100), nullable=False)
+    fotos                   = db.Column(db.String(255), nullable=True)
+    fechaEmisionPublicacion = db.Column(db.DateTime, default=datetime.utcnow)
+    fechaFinPublicacion     = db.Column(db.DateTime, nullable=True)
+    categoriaOtro           = db.Column(db.String(50), nullable=True)
+    codCategoria            = db.Column(db.Integer, db.ForeignKey('categoria.codCategoria'), nullable=False)
+    codUsuario              = db.Column(db.Integer, db.ForeignKey('usuario.codUsuario'), nullable=False)
+
+    # Atributos de Ropa
+    genero   = db.Column(db.String(10), nullable=True)
+    talle    = db.Column(db.String(2),  nullable=True)
+    color    = db.Column(db.String(10), nullable=True)
+    material = db.Column(db.String(10), nullable=True)
+
+    # Atributos de Medicamento
+    fechaVencimiento = db.Column(db.DateTime, nullable=True)
+    receta           = db.Column(db.Boolean, nullable=True)
+
+    # Atributos de Electrónico
+    marca = db.Column(db.String(20), nullable=True)
+
+    # Atributos de Alimento
+    fechaVencimientoAlimento = db.Column(db.DateTime, nullable=True)
