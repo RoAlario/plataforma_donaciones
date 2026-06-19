@@ -75,6 +75,11 @@
     <section class="mb-8">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-2xl font-bold text-[#121c2a]">Categorías</h2>
+        {% if categoria_seleccionada or busqueda %}
+          <a href="{{ url_for('donaciones.home') }}" class="text-[#a63b00] text-sm font-medium hover:underline">
+            Ver todas
+          </a>
+        {% endif %}
       </div>
       <div class="flex gap-4 md:gap-6 overflow-x-auto lg:grid lg:grid-cols-7 hide-scrollbar pb-6 lg:pb-2 px-1 pt-3">
         {% set fotos_cat = {
