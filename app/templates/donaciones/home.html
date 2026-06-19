@@ -128,12 +128,12 @@
       {% if publicaciones %}
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {% for p in publicaciones %}
-            <article class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-[#dfc0b4]/30 flex flex-col">
+            <a href="{{ url_for('donaciones.detalle', id=p.nroPublicacion) }}" class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-[#dfc0b4]/30 flex flex-col no-underline">
               <div class="aspect-[4/3] overflow-hidden relative">
                 {% if p.fotos %}
                   <img src="{{ url_for('static', filename='fotos/' + p.fotos) }}"
                        alt="{{ p.titulo }}"
-                       class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                       class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500">
                 {% else %}
                   <div class="w-full h-full bg-[#e6eeff] flex items-center justify-center text-5xl">📦</div>
                 {% endif %}
@@ -153,7 +153,7 @@
                   </div>
                 </div>
               </div>
-            </article>
+            </a>
           {% endfor %}
         </div>
       {% else %}
@@ -169,8 +169,9 @@
 
   </main>
 
-  <!-- BOTÓN DONAR -->
-  <a href="#" class="fixed bottom-8 right-8 z-50 flex items-center gap-3 px-6 py-4 bg-[#f27036] text-white rounded-full shadow-xl hover:bg-[#a63b00] hover:-translate-y-1 transition-all duration-300 font-bold text-sm">
+  <!-- BOTÓN DONAR --> 
+  <a href="{{ url_for('donaciones.publicar') }}" class="fixed bottom-8 right-8 z-50 flex items-center gap-3 px-6 py-4 bg-[#f27036] text-white rounded-full shadow-xl hover:bg-[#a63b00] hover:-translate-y-1 transition-all duration-300 font-bold text-sm">
+  
     <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
     Donar ahora
   </a>

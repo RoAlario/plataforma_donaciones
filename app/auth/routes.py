@@ -259,3 +259,10 @@ def requiere_campania(f):
             return redirect(url_for('donaciones.home'))
         return f(*args, **kwargs)
     return decorador
+
+
+@auth_bp.route('/logout')
+def logout():
+    session.clear()
+    flash('Cerraste sesión correctamente.', 'success')
+    return redirect(url_for('auth.login'))  

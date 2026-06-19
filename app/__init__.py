@@ -1,11 +1,13 @@
 import os
 from flask import Flask
 from app.extensions import db, mail
+from dotenv import load_dotenv
 
 def create_app():
+    load_dotenv() 
     app = Flask(__name__)
 
-    app.secret_key = 'clave_secreta_cambiar'
+    app.secret_key = os.environ['SECRET_KEY']
     app.config['UPLOAD_FOLDER'] = os.path.join('app', 'static', 'fotos')
     app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///plataforma.db'
@@ -14,7 +16,7 @@ def create_app():
     app.config['MAIL_PORT']     = 587
     app.config['MAIL_USE_TLS']  = True
     app.config['MAIL_USERNAME'] = 'utnfrm.10@gmail.com'
-    app.config['MAIL_PASSWORD'] = 'fezr xfck miad zofe'
+    app.config['MAIL_PASSWORD'] = os.environ['MAIL_PASSWORD']
 
     db.init_app(app)
     mail.init_app(app)

@@ -9,13 +9,13 @@ class Rol(db.Model):
     fechaAltaRol  = db.Column(db.DateTime, default=datetime.utcnow)
     fechaBajaRol  = db.Column(db.DateTime, nullable=True)
 
-    # relación inversa
+    # Relación con Usuario (un rol puede tener muchos usuarios)
     usuarios = db.relationship('Usuario', backref='rol')
 
     def __repr__(self):
         return f'<Rol {self.nombre}>'
 
-
+ # Tabla de usuarios
 class Usuario(db.Model):
     __tablename__ = 'usuario'
 
@@ -42,10 +42,10 @@ class Usuario(db.Model):
 
     # ── Helpers útiles ─────────────────────────────────────────────────────
     def es_admin(self):
-        return self.rol.nombre == 'Admin'
+        return self.rol is not None and self.rol.nombre == 'Admin'
 
     def es_usuario(self):
-        return self.rol.nombre == 'Usuario'
+        return self.rol is not None and self.rol.nombre == 'Usuario'
     
 class Categoria(db.Model):
     __tablename__ = 'categoria'
@@ -67,19 +67,37 @@ class Publicacion(db.Model):
     categoriaOtro           = db.Column(db.String(50), nullable=True)
     codCategoria            = db.Column(db.Integer, db.ForeignKey('categoria.codCategoria'), nullable=False)
     codUsuario              = db.Column(db.Integer, db.ForeignKey('usuario.codUsuario'), nullable=False)
+    codEstadoPublicacion = db.Column(db.Integer, db.ForeignKey('estado_publicacion.codEstadoPublicacion'), nullable=True)
+    nroDireccion         = db.Column(db.Integer, db.ForeignKey('direccion.nroDireccion'), nullable=True)
 
-    # Atributos de Ropa
+
+    # Categoria ropa 
     genero   = db.Column(db.String(10), nullable=True)
-    talle    = db.Column(db.String(2),  nullable=True)
-    color    = db.Column(db.String(10), nullable=True)
-    material = db.Column(db.String(10), nullable=True)
+    talle    = db.Column(db.String(10), nullable=True)
+    color    = db.Column(db.String(30), nullable=True)
+    material = db.Column(db.String(30), nullable=True)
 
-    # Atributos de Medicamento
+    # Categoria Medicamento
     fechaVencimiento = db.Column(db.DateTime, nullable=True)
     receta           = db.Column(db.Boolean, nullable=True)
 
-    # Atributos de Electrónico
+    # Categoria Electrónico
     marca = db.Column(db.String(20), nullable=True)
+    
+    
+class EstadoPublicacion(db.Model):
+    __tablename__ = 'estado_publicacion'
+    codEstadoPublicacion  = db.Column(db.Integer, primary_key=True)
+    nombreEP              = db.Column(db.String(20), nullable=False, unique=True)
+    fechaAltaPublicacion  = db.Column(db.DateTime, default=datetime.utcnow)
+    fechaBajaPublicacion  = db.Column(db.DateTime, nullable=True)
+    publicaciones         = db.relationship('Publicacion', backref='estado')
 
-    # Atributos de Alimento
-    fechaVencimientoAlimento = db.Column(db.DateTime, nullable=True)
+class Direccion(db.Model):
+    __tablename__ = 'direccion'
+    nroDireccion      = db.Column(db.Integer, primary_key=True)
+    nombreCalle       = db.Column(db.String(100), nullable=False)
+    nroDeCasa         = db.Column(db.Integer, nullable=True)
+    codigoPostal      = db.Column(db.Integer, nullable=True)
+    fechaAltaDireccion = db.Column(db.DateTime, default=datetime.utcnow)
+    fechaBajaDireccion = db.Column(db.DateTime, nullable=True)

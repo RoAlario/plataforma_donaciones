@@ -1,6 +1,7 @@
+
 from app import create_app
 from app.extensions import db
-from app.models import Rol, Categoria
+from app.models import Rol, Categoria, EstadoPublicacion
 
 app = create_app()
 
@@ -17,9 +18,17 @@ def crear_categorias_iniciales():
             db.session.add(Categoria(nombreCategoria=nombre))
     db.session.commit()
 
+def crear_estados_iniciales():
+    estados = ['Disponible', 'En progreso', 'Entregado', 'Cancelado']
+    for nombre in estados:
+        if not EstadoPublicacion.query.filter_by(nombreEP=nombre).first():
+            db.session.add(EstadoPublicacion(nombreEP=nombre))
+    db.session.commit()
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         crear_roles_iniciales()
         crear_categorias_iniciales()
+        crear_estados_iniciales()
     app.run(debug=True)
