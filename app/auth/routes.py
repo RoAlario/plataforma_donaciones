@@ -221,7 +221,7 @@ def nueva_contrasena():
             db.session.commit()
             session.pop('email_recuperar', None)
             session.pop('recuperacion_verificada', None)
-            flash('¡Contraseña actualizada! Ya podés iniciar sesión.', 'success')
+            flash('Contraseña actualizada. Ya podés iniciar sesión.', 'success')
             return redirect(url_for('auth.login'))
     return render_template('nueva_contrasena.html', errores=errores)
 
