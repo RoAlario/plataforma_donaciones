@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ p.titulo }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  </style>
+</head>
+<body class="bg-[#f8f9ff] min-h-screen">
+
+  <div class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Volver -->
+    <a href="{{ url_for('donaciones.home') }}"
+       class="flex items-center gap-2 text-[#584239] hover:text-[#a63b00] transition-colors mb-6 text-sm">
+      <span class="material-symbols-outlined text-xl">arrow_back</span>
+      Volver
+    </a>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- Columna izquierda -->
+      <div class="lg:col-span-2">
+
+        <!-- Foto -->
+        <div class="bg-white rounded-2xl overflow-hidden shadow-sm mb-6">
+          {% if p.fotos %}
+            <img src="{{ url_for('static', filename='fotos/' + p.fotos) }}"
+                 alt="{{ p.titulo }}"
+                 class="w-full h-80 object-cover object-center">
+          {% else %}
+            <div class="w-full h-80 bg-[#e6eeff] flex items-center justify-center text-7xl">📦</div>
+          {% endif %}
+        </div>
+
+        <!-- Info principal -->
+        <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
+          <h1 class="text-2xl font-bold text-[#121c2a] mb-4">{{ p.titulo }}</h1>
+
+          <div class="flex flex-col gap-3 mb-4">
+            <div class="flex items-center gap-2 text-[#584239]">
+              <span class="material-symbols-outlined text-xl text-[#a63b00]">schedule</span>
+              <span class="text-sm">Publicado {{ tiempo }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-[#584239]">
+              <span class="material-symbols-outlined text-xl text-[#a63b00]">location_on</span>
+              <span class="text-sm">{{ p.ubicacion }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-[#584239]">
+              <span class="material-symbols-outlined text-xl text-[#a63b00]">category</span>
+              <span class="text-sm">Categoría: {{ p.categoria.nombreCategoria }}</span>
+              {% if p.categoriaOtro %}
+                <span class="text-sm text-[#8c7168]">({{ p.categoriaOtro }})</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Campos extra según categoría -->
+          {% if p.fechaVencimiento %}
+            <div class="flex items-center gap-2 text-[#584239] mb-3">
+              <span class="material-symbols-outlined text-xl text-[#a63b00]">event</span>
+              <span class="text-sm">Vence: {{ p.fechaVencimiento.strftime('%d/%m/%Y') if p.fechaVencimiento else '' }}</span>
+            </div>
+          {% endif %}
+
+          {% if p.marca %}
+            <div class="flex items-center gap-2 text-[#584239] mb-3">
+              <span class="material-symbols-outlined text-xl text-[#a63b00]">sell</span>
+              <span class="text-sm">Marca: {{ p.marca }}</span>
+            </div>
+          {% endif %}
+
+          <!-- Descripción -->
+          {% if p.descripcionPublicacion %}
+            <div class="border-t border-[#f0e8e0] pt-4 mt-4">
+              <h3 class="text-sm font-semibold text-[#121c2a] mb-2">Descripción</h3>
+              <p class="text-sm text-[#584239] leading-relaxed">{{ p.descripcionPublicacion }}</p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Botón solicitar -->
+        <button class="w-full py-4 bg-[#f27036] text-white font-bold text-base rounded-2xl hover:bg-[#a63b00] transition-colors flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+          Solicitar donación
+        </button>
+
+      </div>
+
+      <!-- Columna derecha — Perfil del donante -->
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-2xl shadow-sm p-6 sticky top-6">
+
+          <!-- Foto perfil -->
+          <div class="flex flex-col items-center mb-4">
+            {% if donante.foto_perfil %}
+              <img src="{{ url_for('static', filename='fotos/' + donante.foto_perfil) }}"
+                   alt="{{ donante.nombre }}"
+                   class="w-20 h-20 rounded-full object-cover border-2 border-[#f27036] mb-3">
+            {% else %}
+              <div class="w-20 h-20 rounded-full bg-[#f27036] flex items-center justify-center text-white text-2xl font-bold mb-3">
+                {{ donante.nombre[0].upper() }}
+              </div>
+            {% endif %}
+            <h3 class="text-base font-bold text-[#121c2a]">{{ donante.nombre }}</h3>
+          </div>
+
+          <!-- Info donante -->
+          <div class="flex flex-col gap-2 mb-4">
+            {% if donante.ubicacion %}
+              <div class="flex items-center gap-2 text-[#584239]">
+                <span class="material-symbols-outlined text-base text-[#a63b00]">location_on</span>
+                <span class="text-xs">{{ donante.ubicacion }}</span>
+              </div>
+            {% endif %}
+            <div class="flex items-center gap-2 text-[#584239]">
+              <span class="material-symbols-outlined text-base text-[#a63b00]">calendar_month</span>
+              <span class="text-xs">Miembro desde {{ donante.fechaAltaUsuario.strftime('%d %B %Y') }}</span>
+            </div>
+          </div>
+
+          <!-- Contadores -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-[#f27036] rounded-xl p-3 text-center text-white">
+              <div class="text-2xl font-bold">{{ donaciones_realizadas }}</div>
+              <div class="text-xs mt-1">Donaciones Realizadas</div>
+            </div>
+            <div class="bg-[#006a61] rounded-xl p-3 text-center text-white">
+              <div class="text-2xl font-bold">0</div>
+              <div class="text-xs mt-1">Donaciones Recibidas</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registro</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #F4F4F4; font-family: 'Roboto', sans-serif; }
+    .card-registro {
+      max-width: 420px; margin: 40px auto; background: #fff;
+      border-radius: 20px; padding: 40px 36px; box-shadow: 0 4px 20px rgba(0,0,0,.08);
+    }
+    .logo { width: 80px; display: block; margin: 0 auto 16px; }
+    h2 { font-size: 32px; font-weight: 500; margin-bottom: 2px; }
+    .subtitulo { font-size: 20px; color: #555; margin-bottom: 24px; }
+    .label-campo { font-size: 13px; color: #555; margin-bottom: 4px; }
+    .label-campo span { color: #CD1800; }
+    .form-control {
+      border-radius: 10px; border: 1.5px solid #ddd;
+      padding: 12px 14px; font-size: 16px; margin-bottom: 12px; transition: border-color .2s;
+    }
+    .form-control:focus { border-color: #FD8223; box-shadow: 0 0 0 3px rgba(253,130,35,.15); }
+    .form-control.is-invalid { border-color: #CD1800; }
+    .invalid-feedback { color: #CD1800; font-size: 13px; margin-top: -8px; margin-bottom: 8px; }
+    .foto-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 10px; border: 2px solid #FD8223; }
+    .foto-placeholder { width: 80px; height: 80px; border-radius: 50%; background: #f0f0f0; border: 2px dashed #ddd; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; color: #aaa; font-size: 28px; cursor: pointer; }
+    .btn-foto { width: 100%; background: transparent; color: #FD8223; border: 1.5px solid #FD8223; border-radius: 10px; padding: 10px; font-size: 15px; margin-bottom: 16px; cursor: pointer; transition: background .2s; }
+    .btn-foto:hover { background: rgba(253,130,35,.08); }
+    .btn-registrar {
+      width: 100%; background: #FD8223; color: #fff; border: none;
+      border-radius: 12px; padding: 14px; font-size: 18px; font-weight: 500;
+      margin-top: 8px; transition: background .2s;
+    }
+    .btn-registrar:hover { background: #e06e10; }
+    .pie { text-align: center; margin-top: 16px; font-size: 15px; color: #555; }
+    .pie a { color: #FD8223; font-weight: 500; text-decoration: none; }
+    .opcional { font-size: 12px; color: #aaa; margin-left: 4px; }
+  </style>
+</head>
+<body>
+  <div class="card-registro">
+    <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
+    <h2>Registro</h2>
+    <p class="subtitulo">para comenzar</p>
+
+    <form method="POST" action="{{ url_for('auth.registro') }}" enctype="multipart/form-data" novalidate>
+
+      <!-- Foto de perfil -->
+      <div id="foto-placeholder" class="foto-placeholder" onclick="document.getElementById('foto_perfil').click()">+</div>
+      <img id="foto-preview" class="foto-preview" style="display:none">
+      <input type="file" name="foto_perfil" id="foto_perfil" accept="image/*" style="display:none" onchange="previsualizarFoto(this)">
+      <button type="button" class="btn-foto" onclick="document.getElementById('foto_perfil').click()">
+        Subir foto de perfil <span class="opcional">(opcional)</span>
+      </button>
+      {% if errores.foto_perfil %}
+        <div class="invalid-feedback d-block">{{ errores.foto_perfil }}</div>
+      {% endif %}
+
+      <!-- Nombre -->
+      <p class="label-campo">Nombre y Apellido <span>*</span></p>
+      <input type="text" name="nombre"
+             class="form-control {% if errores.nombre %}is-invalid{% endif %}"
+             placeholder="Nombre y Apellido"
+             value="{{ valores.get('nombre', '') }}">
+      {% if errores.nombre %}
+        <div class="invalid-feedback d-block">{{ errores.nombre }}</div>
+      {% endif %}
+
+      <!-- Email -->
+      <p class="label-campo">Email <span>*</span></p>
+      <input type="email" name="email"
+             class="form-control {% if errores.email %}is-invalid{% endif %}"
+             placeholder="ejemplo@gmail.com"
+             value="{{ valores.get('email', '') }}">
+      {% if errores.email %}
+        <div class="invalid-feedback d-block">{{ errores.email }}</div>
+      {% endif %}
+
+      <!-- Teléfono -->
+      <p class="label-campo">Teléfono <span>*</span></p>
+      <input type="text" name="telefono"
+             class="form-control {% if errores.telefono %}is-invalid{% endif %}"
+             placeholder="Teléfono"
+             value="{{ valores.get('telefono', '') }}">
+      {% if errores.telefono %}
+        <div class="invalid-feedback d-block">{{ errores.telefono }}</div>
+      {% endif %}
+
+      <!-- Ubicación -->
+      <p class="label-campo">Ubicación <span>*</span></p>      <input type="text" name="ubicacion"
+             class="form-control {% if errores.ubicacion %}is-invalid{% endif %}"
+             placeholder="Ubicación"
+             value="{{ valores.get('ubicacion', '') }}">
+      {% if errores.ubicacion %}
+        <div class="invalid-feedback d-block">{{ errores.ubicacion }}</div>
+      {% endif %}
+
+      <!-- Contraseña -->
+      <p class="label-campo">Contraseña <span>*</span></p>
+      <input type="password" name="contrasena"
+             class="form-control {% if errores.contrasena %}is-invalid{% endif %}"
+             placeholder="Mínimo 6 caracteres">
+      {% if errores.contrasena %}
+        <div class="invalid-feedback d-block">{{ errores.contrasena }}</div>
+      {% endif %}
+
+      <!-- Repetir contraseña -->
+      <p class="label-campo">Repetir contraseña <span>*</span></p>
+      <input type="password" name="repetir_contrasena"
+             class="form-control {% if errores.repetir_contrasena %}is-invalid{% endif %}"
+             placeholder="Repetir Contraseña">
+      {% if errores.repetir_contrasena %}
+        <div class="invalid-feedback d-block">{{ errores.repetir_contrasena }}</div>
+      {% endif %}
+
+      <button type="submit" class="btn-registrar">Registrarme</button>
+    </form>
+
+    <p class="pie">¿Ya tenés usuario? <a href="{{ url_for('auth.login') }}">Iniciar Sesión</a></p>
+  </div>
+
+  <script>
+    function previsualizarFoto(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          document.getElementById('foto-preview').src = e.target.result;
+          document.getElementById('foto-preview').style.display = 'block';
+          document.getElementById('foto-placeholder').style.display = 'none';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+  </script>
+</body>
+</html>
