@@ -1,7 +1,7 @@
 import sqlite3
 
 # Conectar a la base de datos
-conexion = sqlite3.connect('instance/plataforma.db')
+conexion = sqlite3.connect('instance/donaciones.db')
 cursor = conexion.cursor()
 
 # Actualizar el número de rol a 1

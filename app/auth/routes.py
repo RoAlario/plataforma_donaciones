@@ -36,9 +36,6 @@ def enviar_email(destinatario, asunto, cuerpo):
 
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
-    
-    
-    
     errores = {}
     
     if request.method == 'POST':
@@ -97,7 +94,7 @@ def registro():
                 f'Tu código de verificación es: {codigo}')
         except Exception as e:
             print(f'[MAIL ERROR] {e}')
-            print(f'[DEV] Código: {codigo}')
+            flash('No se pudo enviar el email de verificación. Usá el código de respaldo que aparece más abajo.', 'error')
         return redirect(url_for('auth.verificar'))
     return render_template('registro.html', errores={}, valores={})
 
@@ -127,6 +124,8 @@ def verificar():
             return redirect(url_for('auth.login'))
         else:
             error = 'El código ingresado no es correcto. Revisá tu email.'
+    email_enviado = session.get('email_enviado', True)
+    codigo_respaldo = pendiente['codigo'] if not email_enviado else None
     return render_template('verificar.html', error=error)
 
 @auth_bp.route('/reenviar-codigo-registro')
@@ -175,12 +174,11 @@ def olvide_contrasena():
             try:
                 enviar_email(email, 'Código para restablecer contraseña',
                     f'Tu código es: {codigo}')
-                exito = 'Te enviamos un código a tu email.'
+                session['email_recuperar'] = email
+                return redirect(url_for('auth.verificar_recuperacion'))
             except Exception as e:
                 print(f'[MAIL ERROR] {e}')
-                exito = 'Te enviamos un código a tu email.'
-            session['email_recuperar'] = email
-            return redirect(url_for('auth.verificar_recuperacion'))
+                error = 'Hubo un error al enviar el email. Intentá de nuevo.'
     return render_template('olvide_contrasena.html', error=error, exito=exito)
 
 @auth_bp.route('/verificar-recuperacion', methods=['GET', 'POST'])
@@ -259,7 +257,6 @@ def requiere_campania(f):
             return redirect(url_for('donaciones.home'))
         return f(*args, **kwargs)
     return decorador
-
 
 @auth_bp.route('/logout')
 def logout():

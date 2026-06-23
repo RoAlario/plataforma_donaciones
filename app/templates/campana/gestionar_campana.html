@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestión de Campañas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --naranja:       #f27036;
+      --naranja-hover: #a63b00;
+      --naranja-light: #f2e0c8;
+      --texto:         #121c2a;
+      --texto-suave:   #584239;
+      --borde:         #dfc0b4;
+    }
+    body { font-family: 'Inter', sans-serif; background: #f8f9ff; color: var(--texto); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+    /* Navbar */
+    .navbar-custom { background: var(--naranja-light); border-bottom: 1px solid var(--borde); }
+
+    /* Tabla */
+    .tabla-custom thead { background: var(--naranja-light); color: var(--texto-suave); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+    .tabla-custom tbody tr:hover { background: #f8f9ff; }
+    .tabla-custom td { vertical-align: middle; font-size: 14px; }
+
+    /* Fila detalle */
+    .fila-detalle { background: #f8f9ff; }
+    .fila-detalle td { font-size: 13px; }
+    .detalle-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--texto-suave); margin-bottom: 4px; }
+
+    /* Botones */
+    .btn-detalle {
+      border: 1px solid var(--borde); background: transparent;
+      color: var(--texto-suave); font-size: 12px; border-radius: 8px;
+      padding: 5px 12px; display: inline-flex; align-items: center; gap: 4px;
+      transition: background .15s;
+    }
+    .btn-detalle:hover { background: var(--naranja-light); }
+    .btn-aceptar { font-size: 12px; border-radius: 8px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-rechazar { font-size: 12px; border-radius: 8px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 4px; }
+
+    /* Modal */
+    .modal-content { border-radius: 16px; border: none; }
+    .modal-icon {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: #fff5f5; display: flex; align-items: center; justify-content: center;
+    }
+    .modal-icon .material-symbols-outlined { color: #dc3545; font-size: 26px; }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar-custom sticky-top shadow-sm">
+    <div class="container-xl px-3 px-md-5 py-3 d-flex align-items-center gap-3">
+      <img src="{{ url_for('static', filename='logo.png') }}" style="height:64px;" alt="Logo">
+      <span class="fw-bold" style="color:var(--naranja-hover); font-size:18px;">Panel de Administración</span>
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <a href="{{ url_for('donaciones.home') }}"
+           class="d-flex align-items-center gap-1 text-decoration-none"
+           style="font-size:14px; color:var(--texto-suave);">
+          <span class="material-symbols-outlined" style="font-size:18px;">home</span>
+          Inicio
+        </a>
+        <span style="color:var(--borde);">|</span>
+        <span style="font-size:14px; font-weight:500;">{{ usuario.nombre }}</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container-xl px-3 px-md-5 py-4">
+
+    <!-- Título -->
+    <div class="mb-4">
+      <h1 class="fw-bold fs-4 mb-1">Gestión de Campañas</h1>
+      <p class="text-muted mb-0" style="font-size:14px;">Peticiones pendientes ordenadas por fecha de envío</p>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert {{ 'alert-success' if category == 'success' else 'alert-danger' }} d-flex align-items-center gap-2 mb-4" role="alert">
+            <span class="material-symbols-outlined">{{ 'check_circle' if category == 'success' else 'cancel' }}</span>
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if peticiones %}
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+      <table class="table tabla-custom mb-0">
+        <thead>
+          <tr>
+            <th class="px-4 py-3">ID</th>
+            <th class="px-4 py-3">Usuario</th>
+            <th class="px-4 py-3">Fecha de envío</th>
+            <th class="px-4 py-3">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in peticiones %}
+
+          <!-- Fila principal -->
+          <tr>
+            <td class="px-4 py-3 fw-medium">#{{ p.nroPeticion }}</td>
+            <td class="px-4 py-3">
+              <div class="fw-medium">{{ p.usuario.nombre }}</div>
+              <div class="text-muted" style="font-size:12px;">{{ p.usuario.email }}</div>
+            </td>
+            <td class="px-4 py-3 text-muted">{{ p.fechaEmitida.strftime('%d/%m/%Y') }}</td>
+            <td class="px-4 py-3">
+              <div class="d-flex align-items-center gap-2">
+
+                <!-- Ver detalles -->
+                <button class="btn-detalle" onclick="toggleDetalle('detalle-{{ p.id }}', this)">
+                  <span class="material-symbols-outlined" style="font-size:16px;">expand_more</span>
+                  Ver detalles
+                </button>
+
+                <!-- Aceptar -->
+                <form method="POST" action="{{ url_for('campana.aceptar_peticion', id=p.id) }}" class="m-0">
+                  <button type="submit" class="btn btn-success btn-aceptar">
+                    <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+                    Aceptar
+                  </button>
+                </form>
+
+                <!-- Rechazar -->
+                <button class="btn btn-danger btn-rechazar"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modal-{{ p.id }}">
+                  <span class="material-symbols-outlined" style="font-size:16px;">cancel</span>
+                  Rechazar
+                </button>
+
+              </div>
+            </td>
+          </tr>
+
+          <!-- Fila detalle expandible -->
+          <tr id="detalle-{{ p.id }}" class="fila-detalle d-none">
+            <td colspan="4" class="px-4 py-3">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="detalle-label">Justificación</div>
+                  <p class="mb-0">{{ p.razonPeticion }}</p>
+                </div>
+                <div class="col-md-6">
+                  <div class="detalle-label">CUIT / Identificación</div>
+                  <p class="mb-0 fw-medium">{{ p.cuitoCuil }}</p>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Modal rechazo -->
+          <div class="modal fade" id="modal-{{ p.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content p-4">
+
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <div class="modal-icon">
+                    <span class="material-symbols-outlined">cancel</span>
+                  </div>
+                  <div>
+                    <h5 class="mb-0 fw-semibold">Rechazar solicitud #{{ p.nroPeticion }}</h5>
+                    <p class="mb-0 text-muted" style="font-size:13px;">{{ p.usuario.nombre }}</p>
+                  </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('campana.rechazar_peticion', id=p.id) }}">
+                  <label class="form-label fw-medium" style="font-size:13px;">
+                    Motivo de rechazo <span class="text-danger">*</span>
+                  </label>
+                  <textarea name="motivo" class="form-control mb-1" rows="4" minlength="10" required
+                            placeholder="Describí el motivo del rechazo (mínimo 10 caracteres)..."></textarea>
+                  <p class="text-muted mb-3" style="font-size:12px;">Se enviará por email al solicitante.</p>
+
+                  <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                      Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                      Confirmar rechazo
+                    </button>
+                  </div>
+                </form>
+
+              </div>
+            </div>
+          </div>
+
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% else %}
+    <div class="text-center py-5" style="color:var(--texto-suave);">
+      <div style="font-size:64px;">📭</div>
+      <p class="fs-5 fw-medium mt-2">No hay solicitudes pendientes.</p>
+      <p class="text-muted">Todas las peticiones han sido evaluadas.</p>
+    </div>
+    {% endif %}
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function toggleDetalle(id, btn) {
+      const fila = document.getElementById(id);
+      fila.classList.toggle('d-none');
+      const icon = btn.querySelector('.material-symbols-outlined');
+      icon.textContent = fila.classList.contains('d-none') ? 'expand_more' : 'expand_less';
+    }
+  </script>
+
+</body>
+</html>

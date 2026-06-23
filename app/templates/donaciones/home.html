@@ -4,84 +4,196 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Inicio - Plataforma de Donaciones</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .material-symbols-outlined {
-      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    :root {
+      --naranja:       #f27036;
+      --naranja-hover: #a63b00;
+      --naranja-light: #f2e0c8;
+      --texto:         #121c2a;
+      --texto-suave:   #584239;
+      --borde:         #dfc0b4;
     }
-    .hide-scrollbar::-webkit-scrollbar { display: none; }
-    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    body { font-family: 'Inter', sans-serif; background: #f8f9ff; color: var(--texto); overflow-x: hidden; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+    /* Navbar */
+    .navbar-custom { background: var(--naranja-light); border-bottom: 1px solid var(--borde); }
+    .search-input {
+      border: 1px solid var(--borde); border-radius: 999px;
+      padding: 8px 16px 8px 42px; font-size: 14px;
+      width: 100%; outline: none;
+    }
+    .search-input:focus { border-color: var(--naranja); box-shadow: 0 0 0 3px rgba(242,112,54,0.15); }
+    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--texto-suave); }
+    .btn-buscar {
+      background: var(--naranja); color: #fff;
+      border: none; border-radius: 999px;
+      padding: 8px 20px; font-size: 14px; font-weight: 500;
+      white-space: nowrap; transition: background .2s;
+    }
+    .btn-buscar:hover { background: var(--naranja-hover); color: #fff; }
+    .avatar-circle {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--naranja); color: #fff;
+      font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+
+    /* Dropdown perfil */
+    .dropdown-menu { border: 1px solid var(--borde); border-radius: 12px; overflow: hidden; min-width: 220px; }
+    .dropdown-header-custom { padding: 12px 16px; border-bottom: 1px solid var(--borde); }
+    .dropdown-item { font-size: 14px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+    .dropdown-item:hover { background: var(--naranja-light); color: var(--texto); }
+    .dropdown-item .material-symbols-outlined { font-size: 20px; color: var(--naranja-hover); }
+    .dropdown-item-danger { color: #dc3545 !important; }
+    .dropdown-item-danger:hover { background: #fff5f5 !important; }
+
+    /* Categorías */
+    .cat-link { text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .cat-img-wrap {
+      width: 96px; height: 96px; border-radius: 50%;
+      border: 2px solid transparent; overflow: hidden;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .cat-link:hover .cat-img-wrap { border-color: var(--naranja); box-shadow: 0 0 0 3px rgba(242,112,54,0.2); }
+    .cat-img-wrap.activa { border-color: var(--naranja-hover); box-shadow: 0 0 0 3px rgba(242,112,54,0.2); }
+    .cat-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .cat-placeholder { width: 100%; height: 100%; background: #e6eeff; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--texto-suave); }
+    .cat-label { font-size: 12px; font-weight: 500; color: var(--texto-suave); text-align: center; }
+    .cat-link:hover .cat-label { color: var(--naranja-hover); }
+    .cats-scroll { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; }
+    .cats-scroll::-webkit-scrollbar { display: none; }
+
+    /* Cards donaciones */
+    .dona-card {
+      background: #fff; border-radius: 12px;
+      border: 1px solid rgba(223,192,180,0.3);
+      overflow: hidden; text-decoration: none; color: inherit;
+      display: flex; flex-direction: column;
+      transition: box-shadow .2s, transform .2s;
+    }
+    .dona-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-2px); color: inherit; }
+    .dona-img { aspect-ratio: 4/3; overflow: hidden; }
+    .dona-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+    .dona-card:hover .dona-img img { transform: scale(1.08); }
+    .dona-placeholder { width: 100%; height: 100%; background: #e6eeff; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+    .dona-body { padding: 14px; flex-grow: 1; display: flex; flex-direction: column; }
+    .dona-titulo { font-size: 13px; font-weight: 700; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dona-card:hover .dona-titulo { color: var(--naranja-hover); }
+    .dona-meta { font-size: 11px; color: var(--texto-suave); display: flex; align-items: center; gap: 4px; margin-top: auto; }
+    .dona-meta .material-symbols-outlined { font-size: 15px; }
+
+    /* Botón donar fijo */
+    .btn-donar-fixed {
+      position: fixed; bottom: 80px; right: 24px; z-index: 50;
+      background: var(--naranja); color: #fff;
+      border: none; border-radius: 999px;
+      padding: 14px 24px; font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 20px rgba(242,112,54,0.4);
+      text-decoration: none; transition: background .2s, transform .2s;
+    }
+    .btn-donar-fixed:hover { background: var(--naranja-hover); color: #fff; transform: translateY(-2px); }
+
+    /* Nav mobile */
+    .nav-mobile {
+      display: none; position: fixed; bottom: 0; left: 0;
+      width: 100%; z-index: 40; background: #fff;
+      border-radius: 16px 16px 0 0; box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+      padding: 10px 0;
+    }
+    @media (max-width: 991px) { .nav-mobile { display: flex; justify-content: space-around; } }
+    .nav-mobile a { display: flex; flex-direction: column; align-items: center; font-size: 11px; text-decoration: none; color: var(--texto-suave); }
+    .nav-mobile a.activo { color: var(--naranja-hover); }
   </style>
 </head>
-<body class="bg-[#f8f9ff] text-[#121c2a] overflow-x-hidden">
+<body>
 
   <!-- NAVBAR -->
-  <header class="sticky top-0 z-50 bg-[#f2e0c8] shadow-sm w-full">
-    <div class="max-w-7xl mx-auto px-4 md:px-12 py-4">
-      <div class="flex items-center gap-6">
+  <header class="navbar-custom sticky-top shadow-sm">
+    <div class="container-xl px-3 px-md-5 py-3">
+      <div class="d-flex align-items-center gap-3">
 
         <!-- Logo -->
-        <img src="{{ url_for('static', filename='logo.png') }}" class="h-16 w-auto object-contain flex-shrink-0" alt="Logo">
-        <!-- Buscador con filtros -->
-        <div class="flex-1 max-w-3xl mx-auto hidden md:block">
-          <form method="GET" action="{{ url_for('donaciones.home') }}" class="flex items-center gap-2">
-            <div class="relative flex-1">
-              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#584239] text-xl">search</span>
-              <input name="q" value="{{ busqueda }}"
-                     class="w-full pl-12 pr-4 py-2.5 bg-white border border-[#dfc0b4] rounded-full focus:ring-2 focus:ring-[#f27036] focus:outline-none text-sm"
-                     placeholder="Buscar productos, categorías...">
-            </div>
-            
-            <button type="submit"
-                    class="px-5 py-2.5 bg-[#f27036] text-white rounded-full text-sm font-medium hover:bg-[#a63b00] transition-colors flex-shrink-0">
-              Buscar
-            </button>
-          </form>
-        </div>
+        <img src="{{ url_for('static', filename='logo.png') }}" style="height:64px;" class="flex-shrink-0" alt="Logo">
+
+        <!-- Buscador desktop -->
+        <form method="GET" action="{{ url_for('donaciones.home') }}" class="d-none d-md-flex align-items-center gap-2 flex-grow-1" style="max-width:600px;">
+          <div class="position-relative flex-grow-1">
+            <span class="material-symbols-outlined search-icon">search</span>
+            <input name="q" value="{{ busqueda }}" class="search-input" placeholder="Buscar productos, categorías...">
+          </div>
+          <button type="submit" class="btn-buscar">Buscar</button>
+        </form>
 
         <!-- Iconos derecha -->
-        <div class="flex items-center gap-4 ml-auto">
-          <button class="text-[#a63b00] hover:opacity-80 transition-opacity">
+        <div class="d-flex align-items-center gap-3 ms-auto">
+          <button class="btn p-0 border-0" style="color: var(--naranja-hover);">
             <span class="material-symbols-outlined">notifications</span>
           </button>
-          <div class="w-10 h-10 rounded-full bg-[#f27036] flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:opacity-80 transition-opacity">
-            {{ usuario.nombre[0].upper() }}
+
+          <!-- Dropdown perfil -->
+          <div class="dropdown">
+            <button class="btn p-0 border-0 d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+              <div class="avatar-circle">{{ usuario.nombre[0].upper() }}</div>
+              <span class="d-none d-md-block" style="font-size:14px; font-weight:500;">{{ usuario.nombre }}</span>
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--texto-suave);">expand_more</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+              <li class="dropdown-header-custom">
+                <p class="mb-0 fw-semibold" style="font-size:14px;">{{ usuario.nombre }}</p>
+                <p class="mb-0 text-muted" style="font-size:12px;">{{ usuario.email }}</p>
+              </li>
+              <li><a class="dropdown-item" href="#">
+                <span class="material-symbols-outlined">volunteer_activism</span> Mis donaciones
+              </a></li>
+              <li><a class="dropdown-item" href="#">
+                <span class="material-symbols-outlined">inbox</span> Solicitudes
+              </a></li>
+              <li><a class="dropdown-item" href="#">
+                <span class="material-symbols-outlined">settings</span> Ajustes
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('campana.solicitar_campana') }}">
+                <span class="material-symbols-outlined">campaign</span> Solicitar Campaña
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item dropdown-item-danger" href="{{ url_for('auth.logout') }}">
+                <span class="material-symbols-outlined">logout</span> Salir
+              </a></li>
+            </ul>
           </div>
         </div>
-
       </div>
 
       <!-- Buscador mobile -->
-      <div class="md:hidden mt-4">
-        <form method="GET" action="{{ url_for('donaciones.home') }}" class="flex flex-col gap-2">
-          <div class="relative">
-            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#584239]">search</span>
-            <input name="q" value="{{ busqueda }}"
-                   class="w-full pl-12 pr-4 py-2.5 bg-white border border-[#dfc0b4] rounded-full focus:ring-2 focus:ring-[#f27036] focus:outline-none text-sm"
-                   placeholder="Buscar...">
-          </div>
-          
-        </form>
-      </div>
+      <form method="GET" action="{{ url_for('donaciones.home') }}" class="d-md-none mt-3 d-flex gap-2">
+        <div class="position-relative flex-grow-1">
+          <span class="material-symbols-outlined search-icon">search</span>
+          <input name="q" value="{{ busqueda }}" class="search-input" placeholder="Buscar...">
+        </div>
+        <button type="submit" class="btn-buscar">
+          <span class="material-symbols-outlined">search</span>
+        </button>
+      </form>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 md:px-12 py-8 pb-32">
+  <main class="container-xl px-3 px-md-5 py-4 pb-5">
 
     <!-- CATEGORÍAS -->
-    <section class="mb-8">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-2xl font-bold text-[#121c2a]">Categorías</h2>
+    <section class="mb-5">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="fw-bold fs-4 mb-0">Categorías</h2>
         {% if categoria_seleccionada or busqueda %}
-          <a href="{{ url_for('donaciones.home') }}" class="text-[#a63b00] text-sm font-medium hover:underline">
-            Ver todas
-          </a>
+          <a href="{{ url_for('donaciones.home') }}" style="color:var(--naranja-hover); font-size:14px;">Ver todas</a>
         {% endif %}
       </div>
-      <div class="flex gap-4 md:gap-6 overflow-x-auto lg:grid lg:grid-cols-7 hide-scrollbar pb-6 lg:pb-2 px-1 pt-3">
+
+      <div class="cats-scroll">
         {% set fotos_cat = {
           'Ropa': 'categorias/ropa.avif',
           'Muebles': 'categorias/sillon.avif',
@@ -91,34 +203,15 @@
           'Alimento': 'categorias/alimentos.png'
         } %}
         {% for cat in categorias %}
-          <a href="{{ url_for('donaciones.home', categoria=cat.codCategoria, q=busqueda) }}"
-             class="flex-shrink-0 flex flex-col items-center gap-2 group cursor-pointer pb-1">
-            <div class="w-24 h-24 md:w-28 md:h-28 rounded-full transition-all duration-300 p-0.5
-                        {% if categoria_seleccionada|string == cat.codCategoria|string %}
-                          ring-2 ring-[#f27036] ring-offset-2
-                        {% else %}
-                          group-hover:ring-2 group-hover:ring-[#f27036] group-hover:ring-offset-2
-                        {% endif %}">
-              <div class="w-full h-full rounded-full overflow-hidden border-2
-                          {% if categoria_seleccionada|string == cat.codCategoria|string %}
-                            border-[#a63b00]
-                          {% else %}
-                            border-transparent group-hover:border-[#f27036]
-                          {% endif %}">
-                {% if cat.nombreCategoria in fotos_cat %}
-                  <img src="{{ url_for('static', filename=fotos_cat[cat.nombreCategoria]) }}"
-                       alt="{{ cat.nombreCategoria }}"
-                       class="w-full h-full object-cover">
-                {% else %}
-                  <div class="w-full h-full bg-[#e6eeff] flex items-center justify-center">
-                    <span class="text-2xl font-bold text-[#584239]">···</span>
-                  </div>
-                {% endif %}
-              </div>
+          <a href="{{ url_for('donaciones.home', categoria=cat.codCategoria, q=busqueda) }}" class="cat-link flex-shrink-0">
+            <div class="cat-img-wrap {{ 'activa' if categoria_seleccionada|string == cat.codCategoria|string }}">
+              {% if cat.nombreCategoria in fotos_cat %}
+                <img src="{{ url_for('static', filename=fotos_cat[cat.nombreCategoria]) }}" alt="{{ cat.nombreCategoria }}">
+              {% else %}
+                <div class="cat-placeholder">···</div>
+              {% endif %}
             </div>
-            <span class="text-xs font-medium text-[#584239] group-hover:text-[#a63b00] transition-colors text-center">
-              {{ cat.nombreCategoria }}
-            </span>
+            <span class="cat-label">{{ cat.nombreCategoria }}</span>
           </a>
         {% endfor %}
       </div>
@@ -126,47 +219,39 @@
 
     <!-- DONACIONES -->
     <section>
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-2xl font-bold text-[#121c2a]">Donaciones recientes</h2>
-      </div>
+      <h2 class="fw-bold fs-4 mb-4">Donaciones recientes</h2>
 
       {% if publicaciones %}
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
           {% for p in publicaciones %}
-            <a href="{{ url_for('donaciones.detalle', id=p.nroPublicacion) }}" class="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer border border-[#dfc0b4]/30 flex flex-col no-underline">
-              <div class="aspect-[4/3] overflow-hidden relative">
-                {% if p.fotos %}
-                  <img src="{{ url_for('static', filename='fotos/' + p.fotos) }}"
-                       alt="{{ p.titulo }}"
-                       class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500">
-                {% else %}
-                  <div class="w-full h-full bg-[#e6eeff] flex items-center justify-center text-5xl">📦</div>
-                {% endif %}
-              </div>
-              <div class="p-4 flex flex-col flex-grow">
-                <h3 class="text-sm font-bold text-[#121c2a] mb-2 line-clamp-1 group-hover:text-[#a63b00] transition-colors">
-                  {{ p.titulo }}
-                </h3>
-                <div class="mt-auto space-y-1">
-                  <div class="flex items-center gap-1.5 text-[#695d4a]">
-                    <span class="material-symbols-outlined text-base">location_on</span>
-                    <span class="text-xs">{{ p.ubicacion }}</span>
+            <div class="col">
+              <a href="{{ url_for('donaciones.detalle', id=p.nroPublicacion) }}" class="dona-card h-100">
+                <div class="dona-img">
+                  {% if p.fotos %}
+                    <img src="{{ url_for('static', filename='fotos/' + p.fotos) }}" alt="{{ p.titulo }}">
+                  {% else %}
+                    <div class="dona-placeholder">📦</div>
+                  {% endif %}
+                </div>
+                <div class="dona-body">
+                  <div class="dona-titulo">{{ p.titulo }}</div>
+                  <div class="dona-meta mt-1">
+                    <span class="material-symbols-outlined">location_on</span> {{ p.ubicacion }}
                   </div>
-                  <div class="flex items-center gap-1.5 text-[#584239]">
-                    <span class="material-symbols-outlined text-base">schedule</span>
-                    <span class="text-xs">{{ p.tiempo }}</span>
+                  <div class="dona-meta mt-1">
+                    <span class="material-symbols-outlined">schedule</span> {{ p.tiempo }}
                   </div>
                 </div>
-              </div>
-            </a>
+              </a>
+            </div>
           {% endfor %}
         </div>
       {% else %}
-        <div class="text-center py-16 text-[#584239]">
-          <div class="text-6xl mb-4">📭</div>
-          <p class="text-lg">No hay donaciones disponibles todavía.</p>
+        <div class="text-center py-5" style="color:var(--texto-suave);">
+          <div style="font-size:64px;">📭</div>
+          <p class="fs-5 mt-2">No hay donaciones disponibles todavía.</p>
           {% if busqueda %}
-            <p class="text-sm mt-2">No se encontraron resultados para "<strong>{{ busqueda }}</strong>".</p>
+            <p class="text-muted">No se encontraron resultados para "<strong>{{ busqueda }}</strong>".</p>
           {% endif %}
         </div>
       {% endif %}
@@ -174,32 +259,32 @@
 
   </main>
 
-  <!-- BOTÓN DONAR --> 
-  <a href="{{ url_for('donaciones.publicar') }}" class="fixed bottom-8 right-8 z-50 flex items-center gap-3 px-6 py-4 bg-[#f27036] text-white rounded-full shadow-xl hover:bg-[#a63b00] hover:-translate-y-1 transition-all duration-300 font-bold text-sm">
-  
+  <!-- BOTÓN DONAR -->
+  <a href="{{ url_for('donaciones.publicar') }}" class="btn-donar-fixed">
     <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
     Donar ahora
   </a>
 
   <!-- NAV MOBILE -->
-  <nav class="lg:hidden fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-4 py-3 bg-white rounded-t-2xl shadow-lg">
-    <a href="{{ url_for('donaciones.home') }}" class="flex flex-col items-center text-[#a63b00]">
+  <nav class="nav-mobile">
+    <a href="{{ url_for('donaciones.home') }}" class="activo">
       <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
-      <span class="text-xs">Inicio</span>
+      Inicio
     </a>
-    <a href="#" class="flex flex-col items-center text-[#584239]">
+    <a href="#">
       <span class="material-symbols-outlined">search</span>
-      <span class="text-xs">Explorar</span>
+      Explorar
     </a>
-    <a href="#" class="flex flex-col items-center text-[#584239]">
+    <a href="#">
       <span class="material-symbols-outlined">favorite</span>
-      <span class="text-xs">Mis Donas</span>
+      Mis Donas
     </a>
-    <a href="#" class="flex flex-col items-center text-[#584239]">
+    <a href="#">
       <span class="material-symbols-outlined">person</span>
-      <span class="text-xs">Perfil</span>
+      Perfil
     </a>
   </nav>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -4,197 +4,251 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Publicar Donación</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    :root {
+      --naranja:       #f27036;
+      --naranja-hover: #a63b00;
+      --naranja-light: #f2e0c8;
+      --texto:         #121c2a;
+      --texto-suave:   #584239;
+      --borde:         #dfc0b4;
+    }
+    body { font-family: 'Inter', sans-serif; background: #f8f9ff; color: var(--texto); }
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-    .cat-btn.activa { border-color: #f27036; background: #fff3ea; color: #a63b00; }
+
+    /* Card principal */
+    .form-card { background: #fff; border-radius: 16px; border: none; box-shadow: 0 1px 6px rgba(0,0,0,0.07); padding: 2rem; }
+
+    /* Foto upload */
+    .foto-placeholder {
+      width: 100%; height: 192px;
+      border: 2px dashed var(--borde); border-radius: 16px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; background: #fff; transition: border-color .2s;
+    }
+    .foto-placeholder:hover { border-color: var(--naranja); }
+    .foto-placeholder .material-symbols-outlined { font-size: 40px; color: var(--texto-suave); }
+    .foto-preview { width: 100%; height: 192px; object-fit: cover; border-radius: 16px; display: none; }
+
+    /* Inputs */
+    .input-custom {
+      width: 100%; padding: 10px 14px;
+      border: 1px solid var(--borde); border-radius: 10px;
+      font-size: 14px; font-family: 'Inter', sans-serif;
+      background: #fff; outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    .input-custom:focus { border-color: var(--naranja); box-shadow: 0 0 0 3px rgba(242,112,54,0.15); }
+    .input-custom.is-invalid { border-color: #dc3545; }
+    .input-icon-wrap { position: relative; }
+    .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--texto-suave); font-size: 20px; }
+    .input-custom.con-icono { padding-left: 38px; }
+
+    /* Label */
+    .form-label-custom { font-size: 13px; font-weight: 500; color: var(--texto-suave); margin-bottom: 6px; display: block; }
+
+    /* Categorías */
+    .cat-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 8px; border: 2px solid transparent; border-radius: 12px;
+      background: transparent; cursor: pointer; transition: border-color .2s;
+      flex-shrink: 0;
+    }
+    .cat-btn:hover { border-color: var(--naranja); }
+    .cat-btn.activa { border-color: var(--naranja); background: #fff3ea; }
+    .cat-btn.activa span { color: var(--naranja-hover); }
+    .cat-img { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; }
+    .cat-img img { width: 100%; height: 100%; object-fit: cover; }
+    .cat-placeholder-img { width: 100%; height: 100%; background: #e6eeff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .cat-label { font-size: 11px; font-weight: 500; color: var(--texto-suave); }
+    .cats-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+    .cats-scroll::-webkit-scrollbar { display: none; }
+
+    /* Botón publicar */
+    .btn-publicar {
+      width: 100%; padding: 14px; background: var(--naranja); color: #fff;
+      border: none; border-radius: 14px; font-weight: 700; font-size: 16px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .2s; cursor: pointer; margin-top: 16px;
+    }
+    .btn-publicar:hover { background: var(--naranja-hover); }
+
+    /* Volver */
+    .btn-volver { font-size: 14px; color: var(--texto-suave); text-decoration: none; transition: color .2s; }
+    .btn-volver:hover { color: var(--naranja-hover); }
   </style>
 </head>
-<body class="bg-[#f8f9ff] min-h-screen">
+<body>
 
-  <div class="max-w-lg mx-auto px-4 py-10">
+  <div class="container py-5" style="max-width: 520px;">
 
-    <div class="text-center mb-8">
-      <h1 class="text-2xl font-bold text-[#121c2a]">Publicar donación</h1>
+    <div class="text-center mb-4">
+      <h1 class="fw-bold" style="font-size: 22px;">Publicar donación</h1>
     </div>
 
+    <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, message in messages %}
-        <div class="mb-4 px-4 py-3 rounded-xl text-sm {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+        <div class="alert {{ 'alert-danger' if category == 'error' else 'alert-success' }} mb-3" style="font-size:14px;">
           {{ message }}
         </div>
       {% endfor %}
     {% endwith %}
 
-    <form method="POST" enctype="multipart/form-data" action="{{ url_for('donaciones.publicar') }}">
+    <div class="form-card">
+      <form method="POST" enctype="multipart/form-data" action="{{ url_for('donaciones.publicar') }}">
 
-      <!-- Foto -->
-      <div class="mb-6">
-        <div id="foto-placeholder" onclick="document.getElementById('foto').click()"
-             class="w-full h-48 border-2 border-dashed border-[#dfc0b4] rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-[#f27036] transition-colors bg-white">
-          <span class="material-symbols-outlined text-4xl text-[#584239] mb-2">add_a_photo</span>
-          <p class="text-sm text-[#584239]">Subí una foto del producto</p>
-          <p class="text-xs text-[#8c7168] mt-1">JPG, PNG o WEBP · Máx 2MB</p>
+        <!-- Foto -->
+        <div class="mb-4">
+          <div id="foto-placeholder" class="foto-placeholder" onclick="document.getElementById('foto').click()">
+            <span class="material-symbols-outlined mb-2">add_a_photo</span>
+            <p class="mb-0" style="font-size:14px; color:var(--texto-suave);">Subí una foto del producto</p>
+            <p class="mb-0 mt-1" style="font-size:12px; color:#8c7168;">JPG, PNG o WEBP · Máx 2MB</p>
+          </div>
+          <img id="foto-preview" class="foto-preview mt-2">
+          <input type="file" name="foto" id="foto" accept="image/*" class="d-none" onchange="previsualizarFoto(this)">
         </div>
-        <img id="foto-preview" class="w-full h-48 object-cover rounded-2xl mt-2 hidden">
-        <input type="file" name="foto" id="foto" accept="image/*" class="hidden" onchange="previsualizarFoto(this)">
-      </div>
 
-      <!-- Nombre -->
-      <div class="mb-4">
-        <label class="text-sm font-medium text-[#584239] mb-1 block">
-          Nombre del producto <span class="text-red-500">*</span>
-        </label>
-        <input type="text" name="titulo" value="{{ valores.get('titulo', '') }}"
-               placeholder="Ej: Abrigos para el invierno"
-               class="w-full px-4 py-3 bg-white border {% if errores.titulo %}border-red-400{% else %}border-[#dfc0b4]{% endif %} rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f27036]">
-        {% if errores.titulo %}
-          <p class="text-red-500 text-xs mt-1">{{ errores.titulo }}</p>
-        {% endif %}
-      </div>
-
-      <!-- Descripción -->
-      <div class="mb-4">
-        <label class="text-sm font-medium text-[#584239] mb-1 block">Descripción</label>
-        <textarea name="descripcion" rows="3"
-                  placeholder="Describí brevemente el producto..."
-                  class="w-full px-4 py-3 bg-white border border-[#dfc0b4] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f27036] resize-none">{{ valores.get('descripcion', '') }}</textarea>
-      </div>
-
-      <!-- Dirección -->
-      <div class="mb-6">
-        <label class="text-sm font-medium text-[#584239] mb-1 block">
-          Ubicación <span class="text-red-500">*</span>
-        </label>
-        <div class="relative">
-          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#584239] text-xl">location_on</span>
-          <input type="text" name="direccion" value="{{ valores.get('direccion', '') }}"
-                 placeholder="Dirección de recolección..."
-                 class="w-full pl-10 pr-4 py-3 bg-white border {% if errores.direccion %}border-red-400{% else %}border-[#dfc0b4]{% endif %} rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f27036]">
-        </div>
-        {% if errores.direccion %}
-          <p class="text-red-500 text-xs mt-1">{{ errores.direccion }}</p>
-        {% endif %}
-      </div>
-
-      <!-- Categoría -->
-      <div class="mb-6">
-        <label class="text-sm font-medium text-[#584239] mb-3 block">
-          ¿Qué estás recolectando? <span class="text-red-500">*</span>
-        </label>
-        {% if errores.categoria %}
-          <p class="text-red-500 text-xs mb-2">{{ errores.categoria }}</p>
-        {% endif %}
-
-        {% set fotos_cat = {
-          'Ropa': 'categorias/ropa.avif',
-          'Muebles': 'categorias/sillon.avif',
-          'Medicamentos': 'categorias/medicamento.webp',
-          'Juguetes': 'categorias/jueguetse.png',
-          'Electrónico': 'categorias/electronica.webp',
-          'Alimento': 'categorias/alimentos.png'
-        } %}
-
-        <input type="hidden" name="categoria_id" id="categoria_id" value="{{ valores.get('categoria_id', '') }}">
-
-        <div class="flex gap-3 overflow-x-auto pb-2">
-          {% for cat in categorias %}
-            <button type="button"
-                    onclick="seleccionarCategoria({{ cat.codCategoria }}, '{{ cat.nombreCategoria }}')"
-                    class="cat-btn flex-shrink-0 flex flex-col items-center gap-1.5 p-2 border-2 border-transparent rounded-xl transition-all duration-200 hover:border-[#f27036] {% if valores.get('categoria_id', '')|string == cat.codCategoria|string %}activa{% endif %}"
-                    id="cat-{{ cat.codCategoria }}">
-              <div class="w-14 h-14 rounded-full overflow-hidden">
-                {% if cat.nombreCategoria in fotos_cat %}
-                  <img src="{{ url_for('static', filename=fotos_cat[cat.nombreCategoria]) }}"
-                       class="w-full h-full object-cover" alt="{{ cat.nombreCategoria }}">
-                {% else %}
-                  <div class="w-full h-full bg-[#e6eeff] flex items-center justify-center text-xl">📦</div>
-                {% endif %}
-              </div>
-              <span class="text-xs font-medium text-[#584239]">{{ cat.nombreCategoria }}</span>
-            </button>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- Campos extra -->
-      <div id="campos-extra">
-
-        <div id="campo-vencimiento" class="mb-4 hidden">
-          <label class="text-sm font-medium text-[#584239] mb-1 block">
-            Fecha de vencimiento <span class="text-red-500">*</span>
-          </label>
-          <input type="date" name="fecha_vencimiento" value="{{ valores.get('fecha_vencimiento', '') }}"
-                 class="w-full px-4 py-3 bg-white border {% if errores.fecha_vencimiento %}border-red-400{% else %}border-[#dfc0b4]{% endif %} rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f27036]">
-          {% if errores.fecha_vencimiento %}
-            <p class="text-red-500 text-xs mt-1">{{ errores.fecha_vencimiento }}</p>
+        <!-- Nombre -->
+        <div class="mb-3">
+          <label class="form-label-custom">Nombre del producto <span class="text-danger">*</span></label>
+          <input type="text" name="titulo" value="{{ valores.get('titulo', '') }}"
+            placeholder="Ej: Abrigos para el invierno"
+            class="input-custom {{ 'is-invalid' if errores.titulo }}">
+          {% if errores.titulo %}
+            <div class="text-danger mt-1" style="font-size:12px;">{{ errores.titulo }}</div>
           {% endif %}
         </div>
 
-        <div id="campo-conservacion" class="mb-4 hidden">
-          <label class="text-sm font-medium text-[#584239] mb-1 block">
-            Estado de conservación <span class="text-red-500">*</span>
-          </label>
-          <select name="conservacion"
-                  class="w-full px-4 py-3 bg-white border {% if errores.conservacion %}border-red-400{% else %}border-[#dfc0b4]{% endif %} rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f27036]">
-            <option value="">Seleccioná una opción</option>
-            <option value="Nuevo" {% if valores.get('conservacion') == 'Nuevo' %}selected{% endif %}>Nuevo</option>
-            <option value="Como nuevo" {% if valores.get('conservacion') == 'Como nuevo' %}selected{% endif %}>Como nuevo</option>
-            <option value="Buen estado" {% if valores.get('conservacion') == 'Buen estado' %}selected{% endif %}>Buen estado</option>
-            <option value="Uso regular" {% if valores.get('conservacion') == 'Uso regular' %}selected{% endif %}>Uso regular</option>
-            <option value="Inservible / Roto" {% if valores.get('conservacion') == 'Inservible / Roto' %}selected{% endif %}>Inservible / Roto</option>
-          </select>
-          {% if errores.conservacion %}
-            <p class="text-red-500 text-xs mt-1">{{ errores.conservacion }}</p>
+        <!-- Descripción -->
+        <div class="mb-3">
+          <label class="form-label-custom">Descripción</label>
+          <textarea name="descripcion" rows="3"
+                    placeholder="Describí brevemente el producto..."
+                    class="input-custom" style="resize:none;">{{ valores.get('descripcion', '') }}</textarea>
+        </div>
+
+        <!-- Ubicación -->
+        <div class="mb-4">
+          <label class="form-label-custom">Ubicación <span class="text-danger">*</span></label>
+          <div class="input-icon-wrap">
+            <span class="material-symbols-outlined input-icon">location_on</span>
+            <input type="text" name="direccion" value="{{ valores.get('direccion', '') }}"
+              placeholder="Dirección de recolección..."
+              class="input-custom con-icono {{ 'is-invalid' if errores.direccion }}">
+          </div>
+          {% if errores.direccion %}
+            <div class="text-danger mt-1" style="font-size:12px;">{{ errores.direccion }}</div>
           {% endif %}
         </div>
 
-        <div id="campo-otro" class="mb-4 hidden">
-          <label class="text-sm font-medium text-[#584239] mb-1 block">
-            ¿Qué tipo de producto es? <span class="text-red-500">*</span>
-          </label>
-          <input type="text" name="categoriaOtro" value="{{ valores.get('categoriaOtro', '') }}"
-                 placeholder="Ej: Libros, bicicleta, herramientas..."
-                 class="w-full px-4 py-3 bg-white border border-[#dfc0b4] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#f27036]">
+        <!-- Categoría -->
+        <div class="mb-4">
+          <label class="form-label-custom">¿Qué estás recolectando? <span class="text-danger">*</span></label>
+          {% if errores.categoria %}
+            <div class="text-danger mb-2" style="font-size:12px;">{{ errores.categoria }}</div>
+          {% endif %}
+
+          {% set fotos_cat = {
+            'Ropa': 'categorias/ropa.avif',
+            'Muebles': 'categorias/sillon.avif',
+            'Medicamentos': 'categorias/medicamento.webp',
+            'Juguetes': 'categorias/jueguetse.png',
+            'Electrónico': 'categorias/electronica.webp',
+            'Alimento': 'categorias/alimentos.png'
+          } %}
+
+          <input type="hidden" name="categoria_id" id="categoria_id" value="{{ valores.get('categoria_id', '') }}">
+
+          <div class="cats-scroll">
+            {% for cat in categorias %}
+              <button type="button"
+                      onclick="seleccionarCategoria({{ cat.codCategoria }}, '{{ cat.nombreCategoria }}')"
+                      class="cat-btn {{ 'activa' if valores.get('categoria_id', '')|string == cat.codCategoria|string }}"
+                      id="cat-{{ cat.codCategoria }}">
+                <div class="cat-img">
+                  {% if cat.nombreCategoria in fotos_cat %}
+                    <img src="{{ url_for('static', filename=fotos_cat[cat.nombreCategoria]) }}" alt="{{ cat.nombreCategoria }}">
+                  {% else %}
+                    <div class="cat-placeholder-img">📦</div>
+                  {% endif %}
+                </div>
+                <span class="cat-label">{{ cat.nombreCategoria }}</span>
+              </button>
+            {% endfor %}
+          </div>
         </div>
 
-      </div>
+        <!-- Campos extra -->
+        <div id="campos-extra">
 
-      <!-- Botón publicar -->
-     <button type="submit" id="btn-publicar" onclick="deshabilitarBoton()"
-              class="w-full py-4 bg-[#f27036] text-white font-bold text-base rounded-2xl hover:bg-[#a63b00] transition-colors flex items-center justify-center gap-2 mt-4">
-        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
-        Publicar Donación
-      </button>
+          <div id="campo-vencimiento" class="mb-3 d-none">
+            <label class="form-label-custom">Fecha de vencimiento <span class="text-danger">*</span></label>
+            <input type="date" name="fecha_vencimiento" value="{{ valores.get('fecha_vencimiento', '') }}"
+              class="input-custom {{ 'is-invalid' if errores.fecha_vencimiento }}">
+            {% if errores.fecha_vencimiento %}
+              <div class="text-danger mt-1" style="font-size:12px;">{{ errores.fecha_vencimiento }}</div>
+            {% endif %}
+          </div>
 
-      <a href="{{ url_for('donaciones.home') }}"
-         class="block text-center mt-4 text-sm text-[#584239] hover:text-[#a63b00] transition-colors">
-        ← Volver al inicio
-      </a>
+          <div id="campo-conservacion" class="mb-3 d-none">
+            <label class="form-label-custom">Estado de conservación <span class="text-danger">*</span></label>
+            <select name="conservacion" class="input-custom {{ 'is-invalid' if errores.conservacion }}">
+              <option value="">Seleccioná una opción</option>
+              <option value="Nuevo"            {% if valores.get('conservacion') == 'Nuevo' %}selected{% endif %}>Nuevo</option>
+              <option value="Como nuevo"       {% if valores.get('conservacion') == 'Como nuevo' %}selected{% endif %}>Como nuevo</option>
+              <option value="Buen estado"      {% if valores.get('conservacion') == 'Buen estado' %}selected{% endif %}>Buen estado</option>
+              <option value="Uso regular"      {% if valores.get('conservacion') == 'Uso regular' %}selected{% endif %}>Uso regular</option>
+              <option value="Inservible / Roto" {% if valores.get('conservacion') == 'Inservible / Roto' %}selected{% endif %}>Inservible / Roto</option>
+            </select>
+            {% if errores.conservacion %}
+              <div class="text-danger mt-1" style="font-size:12px;">{{ errores.conservacion }}</div>
+            {% endif %}
+          </div>
 
-    </form>
+          <div id="campo-otro" class="mb-3 d-none">
+            <label class="form-label-custom">¿Qué tipo de producto es? <span class="text-danger">*</span></label>
+            <input type="text" name="categoriaOtro" value="{{ valores.get('categoriaOtro', '') }}"
+              placeholder="Ej: Libros, bicicleta, herramientas..."
+              class="input-custom">
+          </div>
+
+        </div>
+
+        <!-- Botón publicar -->
+        <button type="submit" class="btn-publicar">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
+          Publicar Donación
+        </button>
+
+        <div class="text-center mt-3">
+          <a href="{{ url_for('donaciones.home') }}" class="btn-volver">← Volver al inicio</a>
+        </div>
+
+      </form>
+    </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    const catVencimiento = ['Alimento', 'Medicamentos'];
+    const catVencimiento  = ['Alimento', 'Medicamentos'];
     const catConservacion = ['Ropa', 'Muebles', 'Electrónico'];
 
     function seleccionarCategoria(id, nombre) {
       document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('activa'));
       document.getElementById('cat-' + id).classList.add('activa');
       document.getElementById('categoria_id').value = id;
-      document.getElementById('campo-vencimiento').classList.add('hidden');
-      document.getElementById('campo-conservacion').classList.add('hidden');
-      document.getElementById('campo-otro').classList.add('hidden');
+      document.getElementById('campo-vencimiento').classList.add('d-none');
+      document.getElementById('campo-conservacion').classList.add('d-none');
+      document.getElementById('campo-otro').classList.add('d-none');
       if (catVencimiento.includes(nombre)) {
-        document.getElementById('campo-vencimiento').classList.remove('hidden');
+        document.getElementById('campo-vencimiento').classList.remove('d-none');
       } else if (catConservacion.includes(nombre)) {
-        document.getElementById('campo-conservacion').classList.remove('hidden');
+        document.getElementById('campo-conservacion').classList.remove('d-none');
       } else if (nombre === 'Otro') {
-        document.getElementById('campo-otro').classList.remove('hidden');
+        document.getElementById('campo-otro').classList.remove('d-none');
       }
     }
 
@@ -202,7 +256,7 @@
     if (catSeleccionada) {
       const btnActivo = document.getElementById('cat-' + catSeleccionada);
       if (btnActivo) {
-        const nombre = btnActivo.querySelector('span').innerText;
+        const nombre = btnActivo.querySelector('.cat-label').innerText;
         seleccionarCategoria(catSeleccionada, nombre);
       }
     }
@@ -212,8 +266,8 @@
         const reader = new FileReader();
         reader.onload = e => {
           document.getElementById('foto-preview').src = e.target.result;
-          document.getElementById('foto-preview').classList.remove('hidden');
-          document.getElementById('foto-placeholder').classList.add('hidden');
+          document.getElementById('foto-preview').style.display = 'block';
+          document.getElementById('foto-placeholder').style.display = 'none';
         };
         reader.readAsDataURL(input.files[0]);
       }
