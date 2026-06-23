@@ -1,9 +1,12 @@
-from flask import render_template, request, redirect, url_for, session
+from flask import render_template, request, redirect, url_for, session, flash, current_app
+from flask_mail import Message
+from app.extensions import db, mail
 from datetime import date
 from app.extensions import db
 from app.models import EstadoPeticion, Peticion, Usuario
 from app.auth.routes import login_requerido, requiere_admin
 from flask import Blueprint
+
 
 campana_bp = Blueprint('campana', __name__)
 @campana_bp.route('/campana/solicitar_campana', methods=['GET', 'POST'])
@@ -54,15 +57,15 @@ def solicitar_campana():
         peticion_pendiente=peticion_pendiente
     )
 
-@campana_bp.route('/admin/campana/gestionar_campanas')
+@campana_bp.route('/admin/campana/gestionar_campana')
 @requiere_admin
-def gestionar_campanas():
+def gestionar_campana():
     peticiones = Peticion.query.filter_by(
         estado=EstadoPeticion.PENDIENTE
     ).order_by(Peticion.fechaEmitida.asc()).all()
 
     return render_template(
-        'campana/gestionar_campanas.html',
+        'campana/gestionar_campana.html',
         peticiones=peticiones,
         usuario=Usuario.query.get(session['usuario_id'])
     )
@@ -97,7 +100,7 @@ def aceptar_peticion(id):
         print(f'[MAIL ERROR] {e}')
 
     flash('Solicitud aprobada correctamente.', 'success')
-    return redirect(url_for('campana.gestionar_campanas'))
+    return redirect(url_for('campana.gestionar_campana'))
 
 
 @campana_bp.route('/admin/rechazar_peticion/<int:id>', methods=['POST'])
@@ -109,7 +112,7 @@ def rechazar_peticion(id):
 
     if len(motivo) < 10:
         flash('El motivo de rechazo debe tener al menos 10 caracteres.', 'error')
-        return redirect(url_for('campana.gestionar_campanas'))
+        return redirect(url_for('campana.gestionar_campana'))
 
     # Actualizar estado
     peticion.estado = EstadoPeticion.RECHAZADA
@@ -133,4 +136,4 @@ def rechazar_peticion(id):
         print(f'[MAIL ERROR] {e}')
 
     flash('Solicitud rechazada correctamente.', 'error')
-    return redirect(url_for('campana.gestionar_campanas'))
+    return redirect(url_for('campana.gestionar_campana'))

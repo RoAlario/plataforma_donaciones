@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background: #F4F4F4; font-family: 'Roboto', sans-serif; }
+    .navbar-custom { background: #FFF8F3; border-bottom: 1px solid #f0e8e0; padding: 14px 32px; }
+    .stat-card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.07); height: 100%; }
+    .stat-numero { font-size: 42px; font-weight: 700; color: #FD8223; }
+    .stat-label { font-size: 14px; color: #584239; margin-top: 4px; }
+    .stat-icono { font-size: 28px; }
+    .panel-card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+    .btn-naranja { background: #FD8223; color: #fff; border: none; border-radius: 10px; }
+    .btn-naranja:hover { background: #e06e10; color: #fff; }
+    .btn-teal { background: #6CAAB0; color: #fff; border: none; border-radius: 10px; }
+    .btn-teal:hover { background: #4d8f95; color: #fff; }
+    .badge-pos { background: #FD8223; color: #fff; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+    .estado-badge { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #FD8223; margin-right: 8px; }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar-custom d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+      <img src="{{ url_for('static', filename='logo.png') }}" style="width:40px;">
+      <span class="fw-bold text-secondary fs-6">Panel de Administración</span>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <span class="text-secondary">{{ usuario.nombre }}</span>
+      <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-secondary rounded-pill">Cerrar sesión</a>
+    </div>
+  </nav>
+
+  <div class="container-fluid px-4 py-4" style="max-width:1200px; margin:0 auto;">
+
+    <!-- TÍTULO Y BOTONES -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div>
+        <h1 class="fs-3 fw-bold mb-0">Panel de Administración</h1>
+        <p class="text-secondary mb-0">Supervisá y gestioná la actividad de la comunidad.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('admin.exportar_pdf') }}" class="btn btn-teal px-4">
+          ⬇️ Exportar Reporte
+        </a>
+      </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {% if category == 'error' %}alert-danger{% else %}alert-success{% endif %} rounded-3">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <!-- STAT CARDS -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="stat-label">Total Donaciones</div>
+              <div class="stat-numero">{{ total_donaciones }}</div>
+            </div>
+            <span class="stat-icono">🤝</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="stat-label">Solicitudes Activas</div>
+              <div class="stat-numero">{{ solicitudes_activas }}</div>
+            </div>
+            <span class="stat-icono">📋</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="stat-label">Usuarios Nuevos</div>
+              <div class="stat-numero">{{ usuarios_nuevos }}</div>
+            </div>
+            <span class="stat-icono">👥</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="stat-label">Donantes Activos</div>
+              <div class="stat-numero">{{ ranking|length }}</div>
+            </div>
+            <span class="stat-icono">⭐</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO Y GESTIÓN DE PARÁMETROS -->
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-md-8">
+        <div class="panel-card">
+          <h2 class="fs-6 fw-bold mb-3">Actividad Semanal de Donaciones</h2>
+          <canvas id="grafico" height="120"></canvas>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="panel-card h-100">
+          <h2 class="fs-6 fw-bold mb-3">⚙️ Gestión de Parámetros</h2>
+          <p class="text-secondary" style="font-size:13px;">Seleccioná qué estados querés gestionar.</p>
+
+          <!-- Acordeón -->
+          <div class="accordion accordion-flush" id="acordeonEstados">
+
+            <!-- Estado Publicación -->
+            <div class="accordion-item border rounded-3 mb-2">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#collapsePublicacion">
+                  📦 Estado de Publicación
+                </button>
+              </h2>
+              <div id="collapsePublicacion" class="accordion-collapse collapse" data-bs-parent="#acordeonEstados">
+                <div class="accordion-body p-2">
+                  {% for estado in estados %}
+                    <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                      <div class="d-flex align-items-center">
+                        <span class="estado-badge"></span>
+                        <span style="font-size:14px;">{{ estado.nombreEP }}</span>
+                      </div>
+                      <button class="btn btn-sm btn-outline-secondary rounded-pill"
+                              data-bs-toggle="modal"
+                              data-bs-target="#modalEditarEstado"
+                              data-id="{{ estado.codEstadoPublicacion }}"
+                              data-nombre="{{ estado.nombreEP }}">
+                        ✏️
+                      </button>
+                    </div>
+                  {% endfor %}
+                  <button class="btn btn-naranja w-100 mt-3 btn-sm"
+                          data-bs-toggle="modal" data-bs-target="#modalNuevoEstado">
+                    + Añadir Estado
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Estado Petición Campaña -->
+            <div class="accordion-item border rounded-3 mb-2">
+              <h2 class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#collapseCampana">
+                  📣 Estado de Petición de Campaña
+                </button>
+              </h2>
+              <div id="collapseCampana" class="accordion-collapse collapse" data-bs-parent="#acordeonEstados">
+                <div class="accordion-body p-2">
+                  {% for ep in ['Pendiente', 'Aceptada', 'Rechazada'] %}
+                    <div class="d-flex align-items-center py-2 border-bottom">
+                      <span class="estado-badge"></span>
+                      <span style="font-size:14px;">{{ ep }}</span>
+                    </div>
+                  {% endfor %}
+                  <p class="text-secondary mt-2" style="font-size:12px;">Estos estados son fijos y no se pueden editar.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>     
+    </div>
+
+    <!-- CAMPAÑAS Y MODERACIÓN -->
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-md-7">
+        <div class="panel-card">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="fs-6 fw-bold mb-0">Evaluación de Solicitudes de Campaña</h2>
+            <a href="{{ url_for('campana.gestionar_campana') }}"
+               class="btn btn-sm btn-naranja px-3">Ver todas</a>
+          </div>
+          <table class="table table-borderless align-middle">
+            <thead>
+              <tr class="text-secondary" style="font-size:12px;">
+                <th>Solicitante</th>
+                <th>Razón</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if peticiones_pendientes %}
+                {% for pet in peticiones_pendientes %}
+                  <tr>
+                    <td class="fw-semibold" style="font-size:14px;">{{ pet.usuario.nombre }}</td>
+                    <td class="text-secondary" style="font-size:13px;">{{ pet.razonPeticion }}</td>
+                    <td>
+                      <form method="POST" action="{{ url_for('campana.aceptar_peticion', id=pet.id) }}" class="d-inline">
+                        <button class="btn btn-sm btn-success rounded-pill">✅ Aceptar</button>
+                      </form>
+                      <button class="btn btn-sm btn-danger rounded-pill"
+                              data-bs-toggle="modal" data-bs-target="#modalRechazar"
+                              data-id="{{ pet.id }}">
+                        ❌ Rechazar
+                      </button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="3" class="text-center text-secondary py-3">No hay solicitudes pendientes.</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+       <div class="col-12 col-md-5">
+        <div class="panel-card">
+          <h2 class="fs-6 fw-bold mb-3">🚩 Moderación</h2>
+          {% if moderacion %}
+            {% for pub in moderacion %}
+              <div class="d-flex align-items-start gap-3 py-2 border-bottom">
+                {% if pub.fotos %}
+                  <img src="{{ url_for('static', filename='fotos/' + pub.fotos) }}"
+                       style="width:60px; height:60px; object-fit:cover; border-radius:10px;">
+                {% else %}
+                  <div style="width:60px; height:60px; background:#f0ebe4; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:24px;">📦</div>
+                {% endif %}
+                <div class="flex-grow-1">
+                  <div class="fw-semibold" style="font-size:14px;">{{ pub.titulo }}</div>
+                  <div class="text-secondary" style="font-size:12px;">{{ pub.descripcionPublicacion or 'Sin descripción' }}</div>
+                </div>
+                <form method="POST" action="{{ url_for('admin.eliminar_publicacion', id=pub.nroPublicacion) }}">
+                  <button class="btn btn-sm btn-danger rounded-pill">Eliminar</button>
+                </form>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="text-secondary text-center py-3">No hay publicaciones para moderar.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- RANKING -->
+    <div class="panel-card">
+      <h2 class="fs-6 fw-bold mb-3">🏆 Top 10 donantes del mes</h2>
+      {% if ranking %}
+        <table class="table table-borderless align-middle">
+          <thead>
+            <tr class="text-secondary" style="font-size:12px;">
+              <th>#</th>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th class="text-end">Donaciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for donante, total in ranking %}
+              <tr>
+                <td><span class="badge-pos">{{ loop.index }}</span></td>
+                <td class="fw-semibold">{{ donante.nombre }}</td>
+                <td class="text-secondary" style="font-size:13px;">{{ donante.email }}</td>
+                <td class="text-end fw-bold" style="color:#FD8223;">{{ total }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="text-center py-4 text-secondary">
+          <div style="font-size:40px;">📭</div>
+          <p>No se registran donaciones finalizadas en el período seleccionado.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+   <!-- MODAL RECHAZAR PETICIÓN -->
+  <div class="modal fade" id="modalRechazar" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content rounded-4">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold">Rechazar petición</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="" id="formRechazar">
+          <div class="modal-body">
+            <input type="hidden" name="peticion_id" id="rechazarPeticionId">
+            <label class="form-label text-secondary">Motivo del rechazo</label>
+            <textarea name="motivo" class="form-control rounded-3" rows="3" required></textarea>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="submit" class="btn btn-danger w-100 rounded-3">Rechazar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR ESTADO -->
+  <div class="modal fade" id="modalEditarEstado" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content rounded-4">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold">Editar estado</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{{ url_for('admin.editar_estado') }}">
+          <div class="modal-body">
+            <input type="hidden" name="estado_id" id="editarEstadoId">
+            <label class="form-label text-secondary">Nombre del estado</label>
+            <input type="text" name="nombre" id="editarEstadoNombre"
+                   class="form-control rounded-3" required>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="submit" class="btn btn-naranja w-100 rounded-3">Guardar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NUEVO ESTADO -->
+  <div class="modal fade" id="modalNuevoEstado" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content rounded-4">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold">Nuevo estado</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{{ url_for('admin.nuevo_estado') }}">
+          <div class="modal-body">
+            <label class="form-label text-secondary">Nombre del estado</label>
+            <input type="text" name="nombre" class="form-control rounded-3" required>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="submit" class="btn btn-naranja w-100 rounded-3">Crear</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Gráfico
+    const ctx = document.getElementById('grafico').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: {{ dias | tojson }},
+        datasets: [{
+          label: 'Donaciones',
+          data: {{ donaciones_por_dia | tojson }},
+          backgroundColor: '#FD8223',
+          borderRadius: 8,
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+
+    // Modal editar estado
+    document.getElementById('modalEditarEstado').addEventListener('show.bs.modal', e => {
+      const btn = e.relatedTarget;
+      document.getElementById('editarEstadoId').value = btn.dataset.id;
+      document.getElementById('editarEstadoNombre').value = btn.dataset.nombre;
+    });
+
+    // Modal rechazar petición
+    document.getElementById('modalRechazar').addEventListener('show.bs.modal', e => {
+      const btn = e.relatedTarget;
+      const id = btn.dataset.id;
+      document.getElementById('rechazarPeticionId').value = id;
+      document.getElementById('formRechazar').action = '/admin/rechazar_peticion/' + id;
+    });
+  </script>
+
+</body>
+</html>
