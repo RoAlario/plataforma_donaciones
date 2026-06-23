@@ -1,18 +1,10 @@
-<<<<<<< HEAD
 from flask import render_template, request, redirect, url_for, session, flash, current_app
 from flask_mail import Message
 from app.extensions import db, mail
-=======
-from flask import render_template, request, redirect, url_for, session, flash
-from flask import current_app
-from flask_mail import Message
->>>>>>> 109511b (US-03: Evaluar Peticiones, falta home del admin)
-from datetime import date
-from app.extensions import db, mail
-from app.models import EstadoPeticion, Peticion, Usuario, Campana, Categoria, EstadoCampana
+from datetime import date, datetime
+from app.models import EstadoPeticion, Peticion, Usuario, Categoria, Campana, EstadoCampana
 from app.auth.routes import login_requerido, requiere_admin
 from flask import Blueprint
-
 
 campana_bp = Blueprint('campana', __name__)
 @campana_bp.route('/campana/solicitar_campana', methods=['GET', 'POST'])
@@ -142,17 +134,13 @@ def rechazar_peticion(id):
         print(f'[MAIL ERROR] {e}')
 
     flash('Solicitud rechazada correctamente.', 'error')
-<<<<<<< HEAD
     return redirect(url_for('campana.gestionar_campana'))
-=======
-    return redirect(url_for('campana.gestionar_campanas'))
 
 @campana_bp.route('/campana/publicar', methods=['GET', 'POST'])
 @login_requerido
 def publicar_campana():
     usuario = Usuario.query.get(session['usuario_id'])
 
-    # Verificar permiso
     if not usuario.puedeCrearCampanias:
         return render_template(
             'campana/publicar_campana.html',
@@ -164,14 +152,13 @@ def publicar_campana():
     errores = {}
 
     if request.method == 'POST':
-        titulo      = request.form.get('titulo', '').strip()
-        descripcion = request.form.get('descripcion', '').strip()
-        ubicacion   = request.form.get('ubicacion', '').strip()
+        titulo       = request.form.get('titulo', '').strip()
+        descripcion  = request.form.get('descripcion', '').strip()
+        ubicacion    = request.form.get('ubicacion', '').strip()
         categoria_id = request.form.get('categoria_id', '')
-        cantidad    = request.form.get('cantidad', '')
-        fecha_fin   = request.form.get('fecha_fin', '')
+        cantidad     = request.form.get('cantidad', '')
+        fecha_fin    = request.form.get('fecha_fin', '')
 
-        # Validaciones
         if not titulo:
             errores['titulo'] = 'El nombre de la campaña es obligatorio.'
         if not ubicacion:
@@ -183,6 +170,7 @@ def publicar_campana():
         if not fecha_fin:
             errores['fecha_fin'] = 'La fecha de finalización es obligatoria.'
         else:
+            from datetime import date
             fecha = date.fromisoformat(fecha_fin)
             if fecha <= date.today():
                 errores['fecha_fin'] = 'La fecha de finalización debe ser posterior al día de hoy.'
@@ -196,16 +184,15 @@ def publicar_campana():
                 valores=request.form
             )
 
-        # Foto
         foto_nombre = None
         foto = request.files.get('foto')
         if foto and foto.filename != '':
             from werkzeug.utils import secure_filename
-            from flask import current_app
             import os
             ext = foto.filename.rsplit('.', 1)[-1].lower()
             if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
                 foto_nombre = secure_filename(foto.filename)
+                from flask import current_app
                 carpeta = current_app.config['UPLOAD_FOLDER']
                 os.makedirs(carpeta, exist_ok=True)
                 foto.save(os.path.join(carpeta, foto_nombre))
@@ -234,4 +221,3 @@ def publicar_campana():
         errores={},
         valores={}
     )
->>>>>>> 83c9222 (US-04: Publicar Campaña Completa)
