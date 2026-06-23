@@ -1,12 +1,10 @@
 from flask import render_template, request, redirect, url_for, session, flash, current_app
 from flask_mail import Message
 from app.extensions import db, mail
-from datetime import date
-from app.extensions import db
-from app.models import EstadoPeticion, Peticion, Usuario
+from datetime import date, datetime
+from app.models import EstadoPeticion, Peticion, Usuario, Categoria, Campana, EstadoCampana
 from app.auth.routes import login_requerido, requiere_admin
 from flask import Blueprint
-
 
 campana_bp = Blueprint('campana', __name__)
 @campana_bp.route('/campana/solicitar_campana', methods=['GET', 'POST'])
@@ -103,7 +101,7 @@ def aceptar_peticion(id):
     return redirect(url_for('campana.gestionar_campana'))
 
 
-@campana_bp.route('/admin/rechazar_peticion/<int:id>', methods=['POST'])
+@campana_bp.route('/admin/campana/rechazar_peticion/<int:id>', methods=['POST'])
 @requiere_admin
 def rechazar_peticion(id):
     peticion  = Peticion.query.get_or_404(id)
@@ -137,3 +135,89 @@ def rechazar_peticion(id):
 
     flash('Solicitud rechazada correctamente.', 'error')
     return redirect(url_for('campana.gestionar_campana'))
+
+@campana_bp.route('/campana/publicar', methods=['GET', 'POST'])
+@login_requerido
+def publicar_campana():
+    usuario = Usuario.query.get(session['usuario_id'])
+
+    if not usuario.puedeCrearCampanias:
+        return render_template(
+            'campana/publicar_campana.html',
+            usuario=usuario,
+            sin_permiso=True
+        )
+
+    categorias = Categoria.query.filter_by(fechaBajaCategoria=None).all()
+    errores = {}
+
+    if request.method == 'POST':
+        titulo       = request.form.get('titulo', '').strip()
+        descripcion  = request.form.get('descripcion', '').strip()
+        ubicacion    = request.form.get('ubicacion', '').strip()
+        categoria_id = request.form.get('categoria_id', '')
+        cantidad     = request.form.get('cantidad', '')
+        fecha_fin    = request.form.get('fecha_fin', '')
+
+        if not titulo:
+            errores['titulo'] = 'El nombre de la campaña es obligatorio.'
+        if not ubicacion:
+            errores['ubicacion'] = 'La ubicación es obligatoria.'
+        if not categoria_id:
+            errores['categoria'] = 'Debe seleccionar una categoría.'
+        if not cantidad or not cantidad.isdigit() or int(cantidad) <= 0:
+            errores['cantidad'] = 'La cantidad debe ser un número mayor a 0.'
+        if not fecha_fin:
+            errores['fecha_fin'] = 'La fecha de finalización es obligatoria.'
+        else:
+            from datetime import date
+            fecha = date.fromisoformat(fecha_fin)
+            if fecha <= date.today():
+                errores['fecha_fin'] = 'La fecha de finalización debe ser posterior al día de hoy.'
+
+        if errores:
+            return render_template(
+                'campana/publicar_campana.html',
+                usuario=usuario,
+                categorias=categorias,
+                errores=errores,
+                valores=request.form
+            )
+
+        foto_nombre = None
+        foto = request.files.get('foto')
+        if foto and foto.filename != '':
+            from werkzeug.utils import secure_filename
+            import os
+            ext = foto.filename.rsplit('.', 1)[-1].lower()
+            if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
+                foto_nombre = secure_filename(foto.filename)
+                from flask import current_app
+                carpeta = current_app.config['UPLOAD_FOLDER']
+                os.makedirs(carpeta, exist_ok=True)
+                foto.save(os.path.join(carpeta, foto_nombre))
+
+        nueva_campana = Campana(
+            titulo=titulo,
+            descripcion=descripcion,
+            ubicacion=ubicacion,
+            fechaFinalizacion=datetime.strptime(fecha_fin, '%Y-%m-%d'),
+            foto=foto_nombre,
+            cantidadNecesaria=int(cantidad),
+            estado=EstadoCampana.ACTIVA,
+            codCategoria=categoria_id,
+            codUsuario=usuario.codUsuario
+        )
+        db.session.add(nueva_campana)
+        db.session.commit()
+
+        flash('¡Campaña publicada exitosamente!', 'success')
+        return redirect(url_for('donaciones.home'))
+
+    return render_template(
+        'campana/publicar_campana.html',
+        usuario=usuario,
+        categorias=categorias,
+        errores={},
+        valores={}
+    )

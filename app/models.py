@@ -103,3 +103,30 @@ class Peticion(db.Model):
 
     def __repr__(self):
         return f'<Peticion {self.nroPeticion} - {self.estado}>'
+
+class EstadoCampana(enum.Enum):
+    ACTIVA     = 'Activa'
+    FINALIZADA = 'Finalizada'
+    CANCELADA  = 'Cancelada'
+
+class Campana(db.Model):
+    __tablename__ = 'campana'
+
+    idCampana           = db.Column(db.Integer, primary_key=True)
+    titulo              = db.Column(db.String(100), nullable=False)
+    descripcion         = db.Column(db.String(300), nullable=True)
+    ubicacion           = db.Column(db.String(100), nullable=False)
+    fechaInicio         = db.Column(db.DateTime, default=datetime.utcnow)
+    fechaFinalizacion   = db.Column(db.DateTime, nullable=False)
+    foto                = db.Column(db.String(255), nullable=True)
+    cantidadNecesaria   = db.Column(db.Integer, nullable=False)
+    estado              = db.Column(db.Enum(EstadoCampana), default=EstadoCampana.ACTIVA)
+
+    codCategoria = db.Column(db.Integer, db.ForeignKey('categoria.codCategoria'), nullable=False)
+    codUsuario   = db.Column(db.Integer, db.ForeignKey('usuario.codUsuario'), nullable=False)
+
+    categoria = db.relationship('Categoria', backref='campanas')
+    usuario   = db.relationship('Usuario', backref='campanas')
+
+    def __repr__(self):
+        return f'<Campana {self.titulo}>'   
