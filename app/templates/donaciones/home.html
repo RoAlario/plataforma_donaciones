@@ -259,10 +259,19 @@
 
   </main>
 
-  <!-- BOTÓN DONAR -->
+  <!-- BOTONES FIJOS -->
+  {% if usuario.puedeCrearCampanias %}
+    <a href="{{ url_for('campana.publicar_campana') }}"
+      class="btn-donar-fixed"
+      style="right: 200px; background: #006a61;">
+      <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">campaign</span>
+      Campaña
+    </a>
+  {% endif %}
+
   <a href="{{ url_for('donaciones.publicar') }}" class="btn-donar-fixed">
-    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
-    Donar ahora
+  <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+  Donar ahora
   </a>
 
   <!-- NAV MOBILE -->

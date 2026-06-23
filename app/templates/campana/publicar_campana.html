@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Publicar Campaña</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --naranja: #f27036; --naranja-hover: #a63b00;
+      --naranja-light: #f2e0c8; --texto: #121c2a;
+      --texto-suave: #584239; --borde: #dfc0b4;
+    }
+    body { font-family: 'Inter', sans-serif; background: #f8f9ff; color: var(--texto); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .form-card { background: #fff; border-radius: 16px; border: none; box-shadow: 0 1px 6px rgba(0,0,0,0.07); padding: 2rem; }
+    .foto-placeholder {
+      width: 100%; height: 200px; border: 2px dashed var(--borde);
+      border-radius: 16px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; cursor: pointer;
+      background: #fff; transition: border-color .2s;
+    }
+    .foto-placeholder:hover { border-color: var(--naranja); }
+    .foto-preview { width: 100%; height: 200px; object-fit: cover; border-radius: 16px; display: none; }
+    .input-custom {
+      width: 100%; padding: 10px 14px; border: 1px solid var(--borde);
+      border-radius: 10px; font-size: 14px; font-family: 'Inter', sans-serif;
+      background: #fff; outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    .input-custom:focus { border-color: var(--naranja); box-shadow: 0 0 0 3px rgba(242,112,54,0.15); }
+    .input-custom.is-invalid { border-color: #dc3545; }
+    .input-icon-wrap { position: relative; }
+    .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--texto-suave); font-size: 20px; }
+    .input-custom.con-icono { padding-left: 38px; }
+    .form-label-custom { font-size: 13px; font-weight: 500; color: var(--texto-suave); margin-bottom: 6px; display: block; }
+    .cat-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 8px; border: 2px solid transparent; border-radius: 12px;
+      background: transparent; cursor: pointer; transition: border-color .2s; flex-shrink: 0;
+    }
+    .cat-btn:hover { border-color: var(--naranja); }
+    .cat-btn.activa { border-color: var(--naranja); background: #fff3ea; }
+    .cat-img { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; }
+    .cat-img img { width: 100%; height: 100%; object-fit: cover; }
+    .cat-label { font-size: 11px; font-weight: 500; color: var(--texto-suave); }
+    .cats-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+    .cats-scroll::-webkit-scrollbar { display: none; }
+    .contador-wrap { display: flex; align-items: center; gap: 12px; }
+    .btn-contador {
+      width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--borde);
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 20px; color: var(--texto-suave); transition: background .2s;
+    }
+    .btn-contador:hover { background: var(--naranja-light); }
+    .contador-num { font-size: 20px; font-weight: 700; min-width: 40px; text-align: center; }
+    .btn-publicar {
+      width: 100%; padding: 14px; background: var(--naranja); color: #fff;
+      border: none; border-radius: 14px; font-weight: 700; font-size: 16px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .2s; cursor: pointer; margin-top: 16px;
+    }
+    .btn-publicar:hover { background: var(--naranja-hover); }
+    .btn-volver { font-size: 14px; color: var(--texto-suave); text-decoration: none; transition: color .2s; }
+    .btn-volver:hover { color: var(--naranja-hover); }
+  </style>
+</head>
+<body>
+
+  <div class="container py-5" style="max-width: 560px;">
+
+    <div class="text-center mb-4">
+      <h1 class="fw-bold" style="font-size: 22px;">Públicar Nueva Campaña</h1>
+    </div>
+
+    {# Mensaje restrictivo si no tiene permiso #}
+    {% if sin_permiso %}
+    <div class="form-card text-center py-5">
+      <div style="font-size: 56px; margin-bottom: 16px;">🔒</div>
+      <h2 class="fw-semibold mb-2" style="font-size: 18px;">Acceso restringido</h2>
+      <p class="text-muted mb-4" style="font-size: 14px;">
+        Su perfil no cuenta con los permisos necesarios para publicar campañas en este momento.
+      </p>
+      <a href="{{ url_for('donaciones.home') }}" class="btn-volver">← Volver al inicio</a>
+    </div>
+
+    {% else %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {{ 'alert-danger' if category == 'error' else 'alert-success' }} mb-3" style="font-size:14px;">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="form-card">
+      <form method="POST" enctype="multipart/form-data" action="{{ url_for('campana.publicar_campana') }}">
+
+        <!-- Foto -->
+        <div class="mb-4">
+          <div id="foto-placeholder" class="foto-placeholder" onclick="document.getElementById('foto').click()">
+            <span class="material-symbols-outlined mb-2" style="font-size:40px; color:var(--texto-suave);">add_a_photo</span>
+            <p class="mb-0" style="font-size:14px; color:var(--texto-suave);">Sube una foto de la campaña</p>
+            <p class="mb-0 mt-1" style="font-size:12px; color:#8c7168;">JPG, PNG hasta 5MB</p>
+          </div>
+          <img id="foto-preview" class="foto-preview mt-2">
+          <input type="file" name="foto" id="foto" accept="image/*" class="d-none" onchange="previsualizarFoto(this)">
+        </div>
+
+        <!-- Nombre -->
+        <div class="mb-3">
+          <label class="form-label-custom">Nombre de la Campaña <span class="text-danger">*</span></label>
+          <input type="text" name="titulo" value="{{ valores.get('titulo', '') }}"
+                 placeholder="Ej: Abrigos para el invierno"
+                 class="input-custom {{ 'is-invalid' if errores.titulo }}">
+          {% if errores.titulo %}
+            <div class="text-danger mt-1" style="font-size:12px;">{{ errores.titulo }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Descripción -->
+        <div class="mb-3">
+          <label class="form-label-custom">Descripción</label>
+          <textarea name="descripcion" rows="3"
+                    placeholder="Describe brevemente el propósito de esta campaña..."
+                    class="input-custom" style="resize:none;">{{ valores.get('descripcion', '') }}</textarea>
+        </div>
+
+        <!-- Ubicación -->
+        <div class="mb-3">
+          <label class="form-label-custom">Ubicación <span class="text-danger">*</span></label>
+          <div class="input-icon-wrap">
+            <span class="material-symbols-outlined input-icon">location_on</span>
+            <input type="text" name="ubicacion" value="{{ valores.get('ubicacion', '') }}"
+                   placeholder="Dirección de recolección"
+                   class="input-custom con-icono {{ 'is-invalid' if errores.ubicacion }}">
+          </div>
+          {% if errores.ubicacion %}
+            <div class="text-danger mt-1" style="font-size:12px;">{{ errores.ubicacion }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Categoría -->
+        <div class="mb-4">
+          <label class="form-label-custom">¿Qué estás recolectando? <span class="text-danger">*</span></label>
+          {% if errores.categoria %}
+            <div class="text-danger mb-2" style="font-size:12px;">{{ errores.categoria }}</div>
+          {% endif %}
+          {% set fotos_cat = {
+            'Ropa': 'categorias/ropa.avif', 'Muebles': 'categorias/sillon.avif',
+            'Medicamentos': 'categorias/medicamento.webp', 'Juguetes': 'categorias/jueguetse.png',
+            'Electrónico': 'categorias/electronica.webp', 'Alimento': 'categorias/alimentos.png'
+          } %}
+          <input type="hidden" name="categoria_id" id="categoria_id" value="{{ valores.get('categoria_id', '') }}">
+          <div class="cats-scroll">
+            {% for cat in categorias %}
+              <button type="button"
+                      onclick="seleccionarCategoria({{ cat.codCategoria }})"
+                      class="cat-btn {{ 'activa' if valores.get('categoria_id', '')|string == cat.codCategoria|string }}"
+                      id="cat-{{ cat.codCategoria }}">
+                <div class="cat-img">
+                  {% if cat.nombreCategoria in fotos_cat %}
+                    <img src="{{ url_for('static', filename=fotos_cat[cat.nombreCategoria]) }}" alt="{{ cat.nombreCategoria }}">
+                  {% else %}
+                    <div style="width:100%;height:100%;background:#e6eeff;display:flex;align-items:center;justify-content:center;">📦</div>
+                  {% endif %}
+                </div>
+                <span class="cat-label">{{ cat.nombreCategoria }}</span>
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Cantidad -->
+        <div class="mb-3">
+          <label class="form-label-custom">Cantidad de artículos necesarios <span class="text-danger">*</span></label>
+          <p class="text-muted mb-2" style="font-size:12px;">Establecé una meta para tu campaña.</p>
+          <div class="contador-wrap">
+            <button type="button" class="btn-contador" onclick="cambiarCantidad(-1)">−</button>
+            <span class="contador-num" id="cantidad-display">{{ valores.get('cantidad', 50) }}</span>
+            <button type="button" class="btn-contador" onclick="cambiarCantidad(1)">+</button>
+          </div>
+          <input type="hidden" name="cantidad" id="cantidad" value="{{ valores.get('cantidad', 50) }}">
+          {% if errores.cantidad %}
+            <div class="text-danger mt-1" style="font-size:12px;">{{ errores.cantidad }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Fecha de finalización -->
+        <div class="mb-4">
+          <label class="form-label-custom">Fecha de Finalización <span class="text-danger">*</span></label>
+          <input type="date" name="fecha_fin" value="{{ valores.get('fecha_fin', '') }}"
+                 class="input-custom {{ 'is-invalid' if errores.fecha_fin }}">
+          {% if errores.fecha_fin %}
+            <div class="text-danger mt-1" style="font-size:12px;">{{ errores.fecha_fin }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Botón publicar -->
+        <button type="submit" class="btn-publicar">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">campaign</span>
+          Publicar Campaña
+        </button>
+
+        <div class="text-center mt-3">
+          <a href="{{ url_for('donaciones.home') }}" class="btn-volver">← Volver al inicio</a>
+        </div>
+
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function seleccionarCategoria(id) {
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('activa'));
+      document.getElementById('cat-' + id).classList.add('activa');
+      document.getElementById('categoria_id').value = id;
+    }
+
+    function cambiarCantidad(delta) {
+      const input = document.getElementById('cantidad');
+      const display = document.getElementById('cantidad-display');
+      let val = parseInt(input.value) + delta;
+      if (val < 1) val = 1;
+      input.value = val;
+      display.textContent = val;
+    }
+
+    function previsualizarFoto(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          document.getElementById('foto-preview').src = e.target.result;
+          document.getElementById('foto-preview').style.display = 'block';
+          document.getElementById('foto-placeholder').style.display = 'none';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+  </script>
+
+</body>
+</html>
