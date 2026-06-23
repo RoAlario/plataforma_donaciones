@@ -110,8 +110,29 @@
           <tr>
             <td class="px-4 py-3 fw-medium">#{{ p.nroPeticion }}</td>
             <td class="px-4 py-3">
-              <div class="fw-medium">{{ p.usuario.nombre }}</div>
-              <div class="text-muted" style="font-size:12px;">{{ p.usuario.email }}</div>
+              <div class="d-flex align-items-center gap-3">
+                
+                <!-- Foto de perfil -->
+                {% if p.usuario.foto_perfil %}
+                  <img src="{{ url_for('static', filename='fotos/' + p.usuario.foto_perfil) }}"
+                  alt="{{ p.usuario.nombre }}"
+                  style="width:40px; height:40px; border-radius:50%; object-fit:cover; border: 2px solid var(--borde);">
+                {% else %}
+                <div style="width:40px; height:40px; border-radius:50%;
+                  background:var(--naranja); color:#fff;
+                  display:flex; align-items:center; justify-content:center;
+                  font-weight:700; font-size:16px; flex-shrink:0;">
+                  {{ p.usuario.nombre[0].upper() }}
+                </div>
+                {% endif %}
+
+                <!-- Nombre y email -->
+                <div>
+                  <div class="fw-medium">{{ p.usuario.nombre }}</div>
+                  <div class="text-muted" style="font-size:12px;">{{ p.usuario.email }}</div>
+                </div>
+
+              </div>
             </td>
             <td class="px-4 py-3 text-muted">{{ p.fechaEmitida.strftime('%d/%m/%Y') }}</td>
             <td class="px-4 py-3">

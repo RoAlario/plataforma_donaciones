@@ -1,8 +1,14 @@
+<<<<<<< HEAD
 from flask import render_template, request, redirect, url_for, session, flash, current_app
 from flask_mail import Message
 from app.extensions import db, mail
+=======
+from flask import render_template, request, redirect, url_for, session, flash
+from flask import current_app
+from flask_mail import Message
+>>>>>>> 109511b (US-03: Evaluar Peticiones, falta home del admin)
 from datetime import date
-from app.extensions import db
+from app.extensions import db, mail
 from app.models import EstadoPeticion, Peticion, Usuario
 from app.auth.routes import login_requerido, requiere_admin
 from flask import Blueprint
@@ -103,7 +109,7 @@ def aceptar_peticion(id):
     return redirect(url_for('campana.gestionar_campana'))
 
 
-@campana_bp.route('/admin/rechazar_peticion/<int:id>', methods=['POST'])
+@campana_bp.route('/admin/campana/rechazar_peticion/<int:id>', methods=['POST'])
 @requiere_admin
 def rechazar_peticion(id):
     peticion  = Peticion.query.get_or_404(id)
