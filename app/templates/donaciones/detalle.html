@@ -4,89 +4,141 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ p.titulo }}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
+    :root {
+      --naranja:       #f27036;
+      --naranja-hover: #a63b00;
+      --naranja-light: #f2e0c8;
+      --texto:         #121c2a;
+      --texto-suave:   #584239;
+      --borde:         #dfc0b4;
+    }
+    body { font-family: 'Inter', sans-serif; background: #f8f9ff; color: var(--texto); }
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+    /* Volver */
+    .btn-volver {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 14px; color: var(--texto-suave); text-decoration: none;
+      transition: color .2s;
+    }
+    .btn-volver:hover { color: var(--naranja-hover); }
+
+    /* Cards */
+    .card-custom { background: #fff; border-radius: 16px; border: none; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+
+    /* Foto principal */
+    .foto-principal { width: 100%; height: 320px; object-fit: cover; object-position: center; border-radius: 16px; }
+    .foto-placeholder { width: 100%; height: 320px; background: #e6eeff; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 72px; }
+
+    /* Meta items */
+    .meta-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--texto-suave); }
+    .meta-item .material-symbols-outlined { font-size: 20px; color: var(--naranja-hover); }
+
+    /* Botón solicitar */
+    .btn-solicitar {
+      width: 100%; padding: 14px; background: var(--naranja); color: #fff;
+      border: none; border-radius: 14px; font-weight: 700; font-size: 16px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .2s; cursor: pointer;
+    }
+    .btn-solicitar:hover { background: var(--naranja-hover); }
+
+    /* Perfil donante */
+    .avatar-donante {
+      width: 80px; height: 80px; border-radius: 50%;
+      border: 2px solid var(--naranja); object-fit: cover;
+    }
+    .avatar-donante-placeholder {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: var(--naranja); color: #fff;
+      font-size: 28px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .contador-card {
+      border-radius: 12px; padding: 12px; text-align: center; color: #fff;
+    }
+    .contador-num { font-size: 24px; font-weight: 700; }
+    .contador-label { font-size: 11px; margin-top: 2px; }
   </style>
 </head>
-<body class="bg-[#f8f9ff] min-h-screen">
+<body>
 
-  <div class="max-w-5xl mx-auto px-4 py-8">
+  <div class="container" style="max-width: 960px; padding: 32px 16px;">
 
     <!-- Volver -->
-    <a href="{{ url_for('donaciones.home') }}"
-       class="flex items-center gap-2 text-[#584239] hover:text-[#a63b00] transition-colors mb-6 text-sm">
-      <span class="material-symbols-outlined text-xl">arrow_back</span>
+    <a href="{{ url_for('donaciones.home') }}" class="btn-volver mb-4 d-inline-flex">
+      <span class="material-symbols-outlined">arrow_back</span>
       Volver
     </a>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="row g-4">
 
       <!-- Columna izquierda -->
-      <div class="lg:col-span-2">
+      <div class="col-12 col-lg-8">
 
         <!-- Foto -->
-        <div class="bg-white rounded-2xl overflow-hidden shadow-sm mb-6">
+        <div class="mb-4">
           {% if p.fotos %}
             <img src="{{ url_for('static', filename='fotos/' + p.fotos) }}"
-                 alt="{{ p.titulo }}"
-                 class="w-full h-80 object-cover object-center">
+                 alt="{{ p.titulo }}" class="foto-principal">
           {% else %}
-            <div class="w-full h-80 bg-[#e6eeff] flex items-center justify-center text-7xl">📦</div>
+            <div class="foto-placeholder">📦</div>
           {% endif %}
         </div>
 
         <!-- Info principal -->
-        <div class="bg-white rounded-2xl shadow-sm p-6 mb-6">
-          <h1 class="text-2xl font-bold text-[#121c2a] mb-4">{{ p.titulo }}</h1>
+        <div class="card-custom p-4 mb-4">
+          <h1 class="fw-bold mb-4" style="font-size: 22px;">{{ p.titulo }}</h1>
 
-          <div class="flex flex-col gap-3 mb-4">
-            <div class="flex items-center gap-2 text-[#584239]">
-              <span class="material-symbols-outlined text-xl text-[#a63b00]">schedule</span>
-              <span class="text-sm">Publicado {{ tiempo }}</span>
+          <div class="d-flex flex-column gap-3 mb-3">
+            <div class="meta-item">
+              <span class="material-symbols-outlined">schedule</span>
+              <span>Publicado {{ tiempo }}</span>
             </div>
-            <div class="flex items-center gap-2 text-[#584239]">
-              <span class="material-symbols-outlined text-xl text-[#a63b00]">location_on</span>
-              <span class="text-sm">{{ p.ubicacion }}</span>
+            <div class="meta-item">
+              <span class="material-symbols-outlined">location_on</span>
+              <span>{{ p.ubicacion }}</span>
             </div>
-            <div class="flex items-center gap-2 text-[#584239]">
-              <span class="material-symbols-outlined text-xl text-[#a63b00]">category</span>
-              <span class="text-sm">Categoría: {{ p.categoria.nombreCategoria }}</span>
+            <div class="meta-item">
+              <span class="material-symbols-outlined">category</span>
+              <span>Categoría: {{ p.categoria.nombreCategoria }}</span>
               {% if p.categoriaOtro %}
-                <span class="text-sm text-[#8c7168]">({{ p.categoriaOtro }})</span>
+                <span class="text-muted" style="font-size:13px;">({{ p.categoriaOtro }})</span>
               {% endif %}
             </div>
+
+            {% if p.fechaVencimiento %}
+              <div class="meta-item">
+                <span class="material-symbols-outlined">event</span>
+                <span>Vence: {{ p.fechaVencimiento.strftime('%d/%m/%Y') }}</span>
+              </div>
+            {% endif %}
+
+            {% if p.marca %}
+              <div class="meta-item">
+                <span class="material-symbols-outlined">sell</span>
+                <span>Marca: {{ p.marca }}</span>
+              </div>
+            {% endif %}
           </div>
-
-          <!-- Campos extra según categoría -->
-          {% if p.fechaVencimiento %}
-            <div class="flex items-center gap-2 text-[#584239] mb-3">
-              <span class="material-symbols-outlined text-xl text-[#a63b00]">event</span>
-              <span class="text-sm">Vence: {{ p.fechaVencimiento.strftime('%d/%m/%Y') if p.fechaVencimiento else '' }}</span>
-            </div>
-          {% endif %}
-
-          {% if p.marca %}
-            <div class="flex items-center gap-2 text-[#584239] mb-3">
-              <span class="material-symbols-outlined text-xl text-[#a63b00]">sell</span>
-              <span class="text-sm">Marca: {{ p.marca }}</span>
-            </div>
-          {% endif %}
 
           <!-- Descripción -->
           {% if p.descripcionPublicacion %}
-            <div class="border-t border-[#f0e8e0] pt-4 mt-4">
-              <h3 class="text-sm font-semibold text-[#121c2a] mb-2">Descripción</h3>
-              <p class="text-sm text-[#584239] leading-relaxed">{{ p.descripcionPublicacion }}</p>
+            <div class="border-top pt-3 mt-3">
+              <h3 class="fw-semibold mb-2" style="font-size:14px;">Descripción</h3>
+              <p class="mb-0" style="font-size:14px; color:var(--texto-suave); line-height:1.7;">
+                {{ p.descripcionPublicacion }}
+              </p>
             </div>
           {% endif %}
         </div>
 
         <!-- Botón solicitar -->
-        <button class="w-full py-4 bg-[#f27036] text-white font-bold text-base rounded-2xl hover:bg-[#a63b00] transition-colors flex items-center justify-center gap-2">
+        <button class="btn-solicitar">
           <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
           Solicitar donación
         </button>
@@ -94,46 +146,49 @@
       </div>
 
       <!-- Columna derecha — Perfil del donante -->
-      <div class="lg:col-span-1">
-        <div class="bg-white rounded-2xl shadow-sm p-6 sticky top-6">
+      <div class="col-12 col-lg-4">
+        <div class="card-custom p-4 sticky-top" style="top: 24px;">
 
           <!-- Foto perfil -->
-          <div class="flex flex-col items-center mb-4">
+          <div class="d-flex flex-column align-items-center mb-4">
             {% if donante.foto_perfil %}
               <img src="{{ url_for('static', filename='fotos/' + donante.foto_perfil) }}"
-                   alt="{{ donante.nombre }}"
-                   class="w-20 h-20 rounded-full object-cover border-2 border-[#f27036] mb-3">
+                   alt="{{ donante.nombre }}" class="avatar-donante mb-3">
             {% else %}
-              <div class="w-20 h-20 rounded-full bg-[#f27036] flex items-center justify-center text-white text-2xl font-bold mb-3">
+              <div class="avatar-donante-placeholder mb-3">
                 {{ donante.nombre[0].upper() }}
               </div>
             {% endif %}
-            <h3 class="text-base font-bold text-[#121c2a]">{{ donante.nombre }}</h3>
+            <h3 class="fw-bold mb-0" style="font-size:16px;">{{ donante.nombre }}</h3>
           </div>
 
           <!-- Info donante -->
-          <div class="flex flex-col gap-2 mb-4">
+          <div class="d-flex flex-column gap-2 mb-4">
             {% if donante.ubicacion %}
-              <div class="flex items-center gap-2 text-[#584239]">
-                <span class="material-symbols-outlined text-base text-[#a63b00]">location_on</span>
-                <span class="text-xs">{{ donante.ubicacion }}</span>
+              <div class="meta-item">
+                <span class="material-symbols-outlined" style="font-size:16px;">location_on</span>
+                <span style="font-size:12px;">{{ donante.ubicacion }}</span>
               </div>
             {% endif %}
-            <div class="flex items-center gap-2 text-[#584239]">
-              <span class="material-symbols-outlined text-base text-[#a63b00]">calendar_month</span>
-              <span class="text-xs">Miembro desde {{ donante.fechaAltaUsuario.strftime('%d %B %Y') }}</span>
+            <div class="meta-item">
+              <span class="material-symbols-outlined" style="font-size:16px;">calendar_month</span>
+              <span style="font-size:12px;">Miembro desde {{ donante.fechaAltaUsuario.strftime('%d %B %Y') }}</span>
             </div>
           </div>
 
           <!-- Contadores -->
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-[#f27036] rounded-xl p-3 text-center text-white">
-              <div class="text-2xl font-bold">{{ donaciones_realizadas }}</div>
-              <div class="text-xs mt-1">Donaciones Realizadas</div>
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="contador-card" style="background: var(--naranja);">
+                <div class="contador-num">{{ donaciones_realizadas }}</div>
+                <div class="contador-label">Donaciones Realizadas</div>
+              </div>
             </div>
-            <div class="bg-[#006a61] rounded-xl p-3 text-center text-white">
-              <div class="text-2xl font-bold">0</div>
-              <div class="text-xs mt-1">Donaciones Recibidas</div>
+            <div class="col-6">
+              <div class="contador-card" style="background: #006a61;">
+                <div class="contador-num">0</div>
+                <div class="contador-label">Donaciones Recibidas</div>
+              </div>
             </div>
           </div>
 
@@ -143,5 +198,6 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
