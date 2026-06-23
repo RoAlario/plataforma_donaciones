@@ -94,7 +94,7 @@ def registro():
                 f'Tu código de verificación es: {codigo}')
         except Exception as e:
             print(f'[MAIL ERROR] {e}')
-            flash('No se pudo enviar el email de verificación. Usá el código de respaldo que aparece más abajo.', 'error')
+            flash('No se pudo enviar el email de verificación. Podés reenviarlo desde la pantalla de verificación.', 'error')
         return redirect(url_for('auth.verificar'))
     return render_template('registro.html', errores={}, valores={})
 
@@ -124,8 +124,6 @@ def verificar():
             return redirect(url_for('auth.login'))
         else:
             error = 'El código ingresado no es correcto. Revisá tu email.'
-    email_enviado = session.get('email_enviado', True)
-    codigo_respaldo = pendiente['codigo'] if not email_enviado else None
     return render_template('verificar.html', error=error)
 
 @auth_bp.route('/reenviar-codigo-registro')
@@ -155,6 +153,8 @@ def login():
         else:
             session['usuario_id'] = usuario.codUsuario
             flash('¡Bienvenido/a!', 'success')
+            if usuario.es_admin():
+                return redirect(url_for('admin.home'))
             return redirect(url_for('donaciones.home'))
     return render_template('login.html', error=error)
 
