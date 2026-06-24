@@ -36,7 +36,7 @@
           <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
               <a href="{{ url_for('donaciones.detalle', id=s.publicacion.nroPublicacion) }}" class="fw-bold text-decoration-none" style="color:var(--texto);">{{ s.publicacion.titulo }}</a>
-              <p class="text-muted mb-0" style="font-size:13px;">Donante: {{ s.publicacion.usuario.nombre }}</p>
+              <p class="text-muted mb-0" style="font-size:13px;">Donante: {{ s.publicacion.donante.nombre }}</p>
             </div>
             <span class="badge rounded-pill badge-{{ s.estado.value|lower }}">{{ s.estado.value }}</span>
           </div>

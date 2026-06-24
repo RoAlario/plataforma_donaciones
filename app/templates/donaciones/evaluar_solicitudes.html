@@ -151,24 +151,24 @@
             <div class="d-flex align-items-center gap-3">
 
               <!-- Avatar -->
-              {% if s.solicitante.foto_perfil %}
-                <img src="{{ url_for('static', filename='fotos/' + s.solicitante.foto_perfil) }}"
-                     class="avatar-sol" alt="{{ s.solicitante.nombre }}">
+              {% if s.usuario.foto_perfil %}
+                <img src="{{ url_for('static', filename='fotos/' + s.usuario.foto_perfil) }}"
+                     class="avatar-sol" alt="{{ s.usuario.nombre }}">
               {% else %}
                 <div class="avatar-sol-placeholder">
-                  {{ s.solicitante.nombre[0].upper() }}
+                  {{ s.usuario.nombre[0].upper() }}
                 </div>
               {% endif %}
 
               <!-- Info solicitante -->
               <div class="flex-grow-1">
-                <h3 class="fw-bold mb-1" style="font-size:16px;">{{ s.solicitante.nombre }}</h3>
+                <h3 class="fw-bold mb-1" style="font-size:16px;">{{ s.usuario.nombre }}</h3>
                 <p class="text-muted mb-1" style="font-size:13px;">
                   <span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle;">location_on</span>
-                  {{ s.solicitante.ubicacion or 'Sin ubicación' }}
+                  {{ s.usuario.ubicacion or 'Sin ubicación' }}
                 </p>
                 <p class="mb-0" style="font-size:13px; color:var(--texto-suave);">
-                  {{ s.mensaje }}
+                  {{ s.razon }}
                 </p>
               </div>
 

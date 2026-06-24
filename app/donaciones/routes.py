@@ -344,6 +344,16 @@ def aceptar_solicitud(id):
         )
         db.session.add(notif_rechazada)
 
+    codigo = generar_codigo_transaccion()
+    nueva_transaccion = Transaccion(
+        codigoVerif=codigo,
+        fechaExpiracion=datetime.utcnow() + timedelta(hours=24),
+        codPublicacion=publicacion.nroPublicacion,
+        codDonante=usuario.codUsuario,
+        codBeneficiario=solicitante.codUsuario
+    )
+    db.session.add(nueva_transaccion) 
+    db.session.flush()  # Asegura que se genere un ID para la transacción
     db.session.commit()
 
     # Email
@@ -363,7 +373,8 @@ def aceptar_solicitud(id):
         print(f'[MAIL ERROR] {e}')
 
     flash('Solicitud aceptada. La donación pasó a "En progreso".', 'success')
-    return redirect(url_for('donaciones.solicitudes_recibidas'))
+    print(f'[DEBUG] idTransaccion: {nueva_transaccion.idTransaccion}')
+    return redirect(url_for('donaciones.coordinacion', id=nueva_transaccion.idTransaccion))
 
 # --- Rechazar solicitud ---
 @donaciones_bp.route('/solicitud/<int:id>/rechazar', methods=['POST'])
@@ -412,7 +423,6 @@ def rechazar_solicitud(id):
 
     flash('Solicitud rechazada.', 'error')
     return redirect(url_for('donaciones.solicitudes_recibidas'))
-
 
 # --- Notificaciones ---
 @donaciones_bp.route('/notificaciones')
@@ -513,6 +523,28 @@ def mis_solicitudes():
     return render_template('donaciones/mis_solicitudes.html',
                            usuario=usuario,
                            solicitudes=solicitudes)
+# --- Evaluar solicitudes (US-08) ---
+@donaciones_bp.route('/donacion/<int:id>/solicitudes')
+@login_requerido
+def evaluar_solicitudes(id):
+    usuario = Usuario.query.get(session['usuario_id'])
+    publicacion = Publicacion.query.get_or_404(id)
+
+    if publicacion.codUsuario != usuario.codUsuario:
+        flash('No tenés permisos para ver esto.', 'error')
+        return redirect(url_for('donaciones.home'))
+
+    # ✅ Asegurate que filtra por publicacion_id no por codUsuario
+    solicitudes = SolicitudDonacion.query.filter_by(
+        publicacion_id=id
+    ).order_by(SolicitudDonacion.fechaSolicitud.asc()).all()
+
+    return render_template('donaciones/mis_donaciones_solicitudes.html',
+        usuario=usuario,
+        publicacion=publicacion,
+        solicitudes=solicitudes,
+        tiempo=tiempo_transcurrido(publicacion.fechaEmisionPublicacion)
+    )
 
 def generar_codigo_transaccion():
     nums = [random.randint(100, 999) for _ in range(3)]
