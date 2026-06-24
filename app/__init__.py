@@ -31,6 +31,8 @@ def create_app():
     from app.admin.routes import admin_bp
     app.register_blueprint(admin_bp)
     
+   
+    
     from app.routes import campana_bp
     app.register_blueprint(campana_bp)
 

@@ -1,6 +1,7 @@
 from app import create_app
 from app.extensions import db
-from app.models import Rol, Categoria, EstadoPublicacion
+from app.models import Rol, Categoria, EstadoPublicacion, SolicitudDonacion, EstadoSolicitudDonacion
+
 
 app = create_app()
 
@@ -18,7 +19,7 @@ def crear_categorias_iniciales():
     db.session.commit()
 
 def crear_estados_iniciales():
-    estados = ['Disponible', 'En progreso', 'Entregado', 'Cancelado']
+    estados = ['Disponible', 'A evaluar', 'En progreso', 'Entregado', 'Cancelado']
     for nombre in estados:
         if not EstadoPublicacion.query.filter_by(nombreEP=nombre).first():
             db.session.add(EstadoPublicacion(nombreEP=nombre))
@@ -31,3 +32,4 @@ if __name__ == '__main__':
         crear_categorias_iniciales()
         crear_estados_iniciales()
     app.run(debug=True)
+      

@@ -75,6 +75,14 @@
       Volver
     </a>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {{ 'alert-danger' if category == 'error' else 'alert-success' }} rounded-3 mb-3">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+
     <div class="row g-4">
 
       <!-- Columna izquierda -->
@@ -137,12 +145,29 @@
           {% endif %}
         </div>
 
-        <!-- Botón solicitar -->
-        <button class="btn-solicitar">
-          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">volunteer_activism</span>
-          Solicitar donación
-        </button>
+       {% set es_propio = p.codUsuario|string == session.get('usuario_id')|string %}
+{% set no_disponible = p.estado and p.estado.nombreEP != 'Disponible' %}
 
+{% if es_propio %}
+  <a href="{{ url_for('donaciones.solicitudes_recibidas') }}"
+     class="btn w-100 py-3 fw-bold rounded-3 text-white text-decoration-none"
+     style="background:#f27036;">
+    <span class="material-symbols-outlined align-middle me-1">inbox</span>
+    Ver solicitudes recibidas
+  </a>
+{% elif no_disponible %}
+  <button class="btn w-100 py-3 fw-bold rounded-3 text-muted" style="background:#e0e0e0;" disabled>
+    <span class="material-symbols-outlined align-middle me-1">volunteer_activism</span>
+    No disponible
+  </button>
+{% else %}
+  <a href="{{ url_for('donaciones.solicitar_donacion', id=p.nroPublicacion) }}"
+     class="btn w-100 py-3 fw-bold rounded-3 text-white text-decoration-none"
+     style="background:#f27036;">
+    <span class="material-symbols-outlined align-middle me-1">volunteer_activism</span>
+    Solicitar donación
+  </a>
+{% endif %}
       </div>
 
       <!-- Columna derecha — Perfil del donante -->
@@ -162,8 +187,12 @@
             <h3 class="fw-bold mb-0" style="font-size:16px;">{{ donante.nombre }}</h3>
           </div>
 
-          <!-- Info donante -->
+           <!-- Info donante -->
           <div class="d-flex flex-column gap-2 mb-4">
+            <div class="meta-item">
+              <span class="material-symbols-outlined" style="font-size:16px;">mail</span>
+              <span style="font-size:12px;">{{ donante.email }}</span>
+            </div>
             {% if donante.ubicacion %}
               <div class="meta-item">
                 <span class="material-symbols-outlined" style="font-size:16px;">location_on</span>
@@ -175,6 +204,7 @@
               <span style="font-size:12px;">Miembro desde {{ donante.fechaAltaUsuario.strftime('%d %B %Y') }}</span>
             </div>
           </div>
+         
 
           <!-- Contadores -->
           <div class="row g-2">

@@ -77,6 +77,25 @@ class EstadoPublicacion(db.Model):
     fechaBajaPublicacion  = db.Column(db.DateTime, nullable=True)
     publicaciones = db.relationship('Publicacion', backref='estado')
 
+class EstadoSolicitudDonacion(enum.Enum):
+    PENDIENTE = 'Pendiente'
+    ACEPTADA  = 'Aceptada'
+    RECHAZADA = 'Rechazada'
+
+class SolicitudDonacion(db.Model):
+    __tablename__ = 'solicitud_donacion'
+    id              = db.Column(db.Integer, primary_key=True)
+    razon           = db.Column(db.String(200), nullable=False)
+    fechaSolicitud  = db.Column(db.DateTime, default=datetime.utcnow)
+    estado          = db.Column(db.Enum(EstadoSolicitudDonacion),
+                                default=EstadoSolicitudDonacion.PENDIENTE)
+    publicacion_id  = db.Column(db.Integer, db.ForeignKey('publicacion.nroPublicacion'))
+    usuario_id      = db.Column(db.Integer, db.ForeignKey('usuario.codUsuario'))
+
+    publicacion = db.relationship('Publicacion', backref='solicitudes')
+    usuario     = db.relationship('Usuario', backref='solicitudes_donacion')
+
+
 class Direccion(db.Model):
     __tablename__ = 'direccion'
     nroDireccion      = db.Column(db.Integer, primary_key=True)
@@ -130,3 +149,14 @@ class Campana(db.Model):
 
     def __repr__(self):
         return f'<Campana {self.titulo}>'   
+    
+class Notificacion(db.Model):
+    __tablename__ = 'notificacion'
+    id            = db.Column(db.Integer, primary_key=True)
+    mensaje       = db.Column(db.String(200), nullable=False)
+    fecha         = db.Column(db.DateTime, default=datetime.utcnow)
+    leida         = db.Column(db.Boolean, default=False)
+    usuario_id    = db.Column(db.Integer, db.ForeignKey('usuario.codUsuario'))
+    enlace        = db.Column(db.String(200), nullable=True)
+
+    usuario = db.relationship('Usuario', backref='notificaciones')

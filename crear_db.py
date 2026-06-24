@@ -1,6 +1,6 @@
 from app import create_app
 from app.extensions import db
-from app.models import Rol, Categoria, EstadoPublicacion
+from app.models import Rol, Categoria, EstadoPublicacion, SolicitudDonacion, EstadoSolicitudDonacion
 
 app = create_app()
 
