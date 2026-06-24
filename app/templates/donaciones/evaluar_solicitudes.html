@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Evaluación de Solicitudes</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --naranja: #f27036; --naranja-hover: #a63b00;
+      --naranja-light: #f2e0c8; --texto: #121c2a;
+      --texto-suave: #584239; --borde: #dfc0b4;
+      --verde: #006a61;
+    }
+    body { font-family: 'Inter', sans-serif; background: #f8f9ff; color: var(--texto); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+    /* Navbar */
+    .navbar-custom { background: var(--naranja-light); border-bottom: 1px solid var(--borde); }
+    .search-input {
+      border: 1px solid var(--borde); border-radius: 999px;
+      padding: 8px 16px 8px 42px; font-size: 14px; width: 100%; outline: none;
+    }
+    .search-input:focus { border-color: var(--naranja); box-shadow: 0 0 0 3px rgba(242,112,54,0.15); }
+    .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--texto-suave); }
+    .avatar-circle {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--naranja); color: #fff;
+      font-weight: 700; font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Cards */
+    .card-custom { background: #fff; border-radius: 16px; border: none; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+
+    /* Solicitud card */
+    .solicitud-card {
+      background: #fff; border-radius: 14px;
+      border: 1px solid rgba(223,192,180,0.3);
+      padding: 20px; margin-bottom: 16px;
+      transition: box-shadow .2s;
+    }
+    .solicitud-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+    /* Avatar solicitante */
+    .avatar-sol {
+      width: 64px; height: 64px; border-radius: 50%;
+      object-fit: cover; border: 2px solid var(--naranja);
+      flex-shrink: 0;
+    }
+    .avatar-sol-placeholder {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--naranja); color: #fff;
+      font-size: 24px; font-weight: 700; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Botones aceptar/rechazar */
+    .btn-aceptar {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 2px solid #28a745; background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all .2s; flex-shrink: 0;
+    }
+    .btn-aceptar:hover { background: #28a745; }
+    .btn-aceptar:hover .material-symbols-outlined { color: #fff; }
+    .btn-aceptar .material-symbols-outlined { color: #28a745; font-size: 26px; }
+
+    .btn-rechazar {
+      width: 48px; height: 48px; border-radius: 50%;
+      border: 2px solid #dc3545; background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all .2s; flex-shrink: 0;
+    }
+    .btn-rechazar:hover { background: #dc3545; }
+    .btn-rechazar:hover .material-symbols-outlined { color: #fff; }
+    .btn-rechazar .material-symbols-outlined { color: #dc3545; font-size: 26px; }
+
+    /* Publicación sidebar */
+    .pub-img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; }
+    .pub-img-placeholder { width: 100%; height: 200px; background: #e6eeff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+    .estado-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+    .dot-amarillo { width: 10px; height: 10px; border-radius: 50%; background: #f5c842; }
+    .dot-verde { width: 10px; height: 10px; border-radius: 50%; background: var(--verde); }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar-custom sticky-top shadow-sm">
+    <div class="container-xl px-3 px-md-5 py-3">
+      <div class="d-flex align-items-center gap-3">
+        <img src="{{ url_for('static', filename='logo.png') }}" style="height:56px;" alt="Logo">
+
+        <form method="GET" action="{{ url_for('donaciones.home') }}"
+              class="d-none d-md-flex align-items-center gap-2 flex-grow-1" style="max-width:500px;">
+          <div class="position-relative flex-grow-1">
+            <span class="material-symbols-outlined search-icon">search</span>
+            <input name="q" class="search-input" placeholder="Buscar productos, categorías...">
+          </div>
+        </form>
+
+        <div class="d-flex align-items-center gap-3 ms-auto">
+          <button class="btn p-0 border-0" style="color: var(--naranja-hover);">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+          <div class="d-flex align-items-center gap-2">
+            <div class="avatar-circle">{{ usuario.nombre[0].upper() }}</div>
+            <span class="d-none d-md-block" style="font-size:14px; font-weight:500;">{{ usuario.nombre }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:960px; padding:32px 16px;">
+
+    <!-- Volver -->
+    <a href="{{ url_for('donaciones.detalle', id=publicacion.nroPublicacion) }}"
+       class="d-inline-flex align-items-center gap-1 text-decoration-none mb-4"
+       style="font-size:14px; color:var(--texto-suave);">
+      <span class="material-symbols-outlined">arrow_back</span>
+      Volver a la publicación
+    </a>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert {{ 'alert-success' if category == 'success' else 'alert-danger' }} mb-4">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <h1 class="fw-bold text-center mb-6" style="font-size:24px; margin-bottom:32px;">
+      Evaluación de Solicitudes
+    </h1>
+
+    <div class="row g-4">
+
+      <!-- Lista de solicitudes -->
+      <div class="col-12 col-lg-8">
+
+        {% if solicitudes %}
+          {% for s in solicitudes %}
+          <div class="solicitud-card">
+            <div class="d-flex align-items-center gap-3">
+
+              <!-- Avatar -->
+              {% if s.solicitante.foto_perfil %}
+                <img src="{{ url_for('static', filename='fotos/' + s.solicitante.foto_perfil) }}"
+                     class="avatar-sol" alt="{{ s.solicitante.nombre }}">
+              {% else %}
+                <div class="avatar-sol-placeholder">
+                  {{ s.solicitante.nombre[0].upper() }}
+                </div>
+              {% endif %}
+
+              <!-- Info solicitante -->
+              <div class="flex-grow-1">
+                <h3 class="fw-bold mb-1" style="font-size:16px;">{{ s.solicitante.nombre }}</h3>
+                <p class="text-muted mb-1" style="font-size:13px;">
+                  <span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle;">location_on</span>
+                  {{ s.solicitante.ubicacion or 'Sin ubicación' }}
+                </p>
+                <p class="mb-0" style="font-size:13px; color:var(--texto-suave);">
+                  {{ s.mensaje }}
+                </p>
+              </div>
+
+              <!-- Botones -->
+              <div class="d-flex gap-2">
+                <form method="POST" action="{{ url_for('donaciones.aceptar_solicitud', id=s.id) }}">
+                  <button type="submit" class="btn-aceptar" title="Aceptar">
+                    <span class="material-symbols-outlined">check_circle</span>
+                  </button>
+                </form>
+                <form method="POST" action="{{ url_for('donaciones.rechazar_solicitud', id=s.id) }}">
+                  <button type="submit" class="btn-rechazar" title="Rechazar">
+                    <span class="material-symbols-outlined">cancel</span>
+                  </button>
+                </form>
+              </div>
+
+            </div>
+          </div>
+          {% endfor %}
+
+        {% else %}
+          <div class="text-center py-5" style="color:var(--texto-suave);">
+            <div style="font-size:56px;">📭</div>
+            <p class="fs-5 fw-medium mt-2">No hay solicitudes pendientes.</p>
+            <p class="text-muted" style="font-size:14px;">Cuando alguien solicite tu donación aparecerá acá.</p>
+          </div>
+        {% endif %}
+
+      </div>
+
+      <!-- Sidebar publicación -->
+      <div class="col-12 col-lg-4">
+        <div class="card-custom p-3 sticky-top" style="top:24px;">
+
+          {% if publicacion.fotos %}
+            <img src="{{ url_for('static', filename='fotos/' + publicacion.fotos) }}" class="pub-img mb-3">
+          {% else %}
+            <div class="pub-img-placeholder mb-3">📦</div>
+          {% endif %}
+
+          <h3 class="fw-bold mb-2" style="font-size:16px;">{{ publicacion.titulo }}</h3>
+
+          <div class="d-flex flex-column gap-2 mb-3">
+            <div style="font-size:13px; color:var(--texto-suave); display:flex; align-items:center; gap:6px;">
+              <span class="material-symbols-outlined" style="font-size:16px;">location_on</span>
+              {{ publicacion.ubicacion }}
+            </div>
+            <div style="font-size:13px; color:var(--texto-suave); display:flex; align-items:center; gap:6px;">
+              <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
+              {{ tiempo }}
+            </div>
+          </div>
+
+          <!-- Estado -->
+          {% if publicacion.estado.nombreEP == 'En progreso' %}
+            <div class="estado-badge">
+              <div class="dot-verde"></div> En Progreso
+            </div>
+          {% else %}
+            <div class="estado-badge">
+              <div class="dot-amarillo"></div> A evaluar
+            </div>
+          {% endif %}
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
