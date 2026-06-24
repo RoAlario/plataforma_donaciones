@@ -188,7 +188,7 @@
         <div class="panel-card">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h2 class="fs-6 fw-bold mb-0">Evaluación de Solicitudes de Campaña</h2>
-            <a href="{{ url_for('campana.gestionar_campana') }}"
+            <a href="{{ url_for('campana.gestionar_campanas') }}"
                class="btn btn-sm btn-naranja px-3">Ver todas</a>
           </div>
           <table class="table table-borderless align-middle">
@@ -297,7 +297,6 @@
         </div>
         <form method="POST" action="" id="formRechazar">
           <div class="modal-body">
-            <input type="hidden" name="peticion_id" id="rechazarPeticionId">
             <label class="form-label text-secondary">Motivo del rechazo</label>
             <textarea name="motivo" class="form-control rounded-3" rows="3" required></textarea>
           </div>

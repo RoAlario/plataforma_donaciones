@@ -41,8 +41,7 @@
     <form method="POST">
       <div class="codigos">
         {% for i in range(1, 7) %}
-          <input type="text" name="d{{ i }}" maxlength="1" inputmode="numeric" autocomplete="off"
-                 oninput="moverFoco(this, {{ i }})">
+          <input type="text" name="d{{ i }}" maxlength="1" inputmode="numeric" autocomplete="off">
         {% endfor %}
       </div>
       <button type="submit" class="btn-verificar">Confirmar código →</button>
