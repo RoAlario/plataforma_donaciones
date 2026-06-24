@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coordinación de Donación</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --naranja: #f27036; --naranja-hover: #a63b00;
+      --naranja-light: #f2e0c8; --texto: #121c2a;
+      --texto-suave: #584239; --borde: #dfc0b4;
+      --verde: #006a61;
+    }
+    body { font-family: 'Inter', sans-serif; background: #f8f9ff; color: var(--texto); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .navbar-custom { background: var(--naranja-light); border-bottom: 1px solid var(--borde); }
+    .card-custom { background: #fff; border-radius: 16px; border: none; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+
+    /* Stepper */
+    .stepper { display: flex; align-items: center; gap: 0; margin: 24px 0; }
+    .step-circle {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 3px solid #ddd; background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px; color: #aaa;
+      flex-shrink: 0; transition: all .3s;
+    }
+    .step-circle.activo { border-color: var(--verde); background: var(--verde); color: #fff; }
+    .step-circle.completado { border-color: var(--verde); background: var(--verde); color: #fff; }
+    .step-line { flex: 1; height: 4px; background: #ddd; transition: background .3s; }
+    .step-line.completado { background: var(--verde); }
+
+    /* Código */
+    .codigo-box {
+      border: 2px solid var(--texto); border-radius: 12px;
+      padding: 20px 32px; text-align: center;
+      font-size: 36px; font-weight: 700; letter-spacing: 4px;
+      font-family: monospace;
+    }
+
+    /* Avatar */
+    .avatar-md {
+      width: 64px; height: 64px; border-radius: 50%;
+      object-fit: cover; border: 2px solid var(--naranja);
+    }
+    .avatar-md-placeholder {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--naranja); color: #fff;
+      font-size: 24px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Publicación card */
+    .pub-img { width: 100%; height: 180px; object-fit: cover; border-radius: 12px; }
+    .pub-img-placeholder { width: 100%; height: 180px; background: #e6eeff; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 48px; }
+    .estado-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--verde); }
+
+    /* Input código */
+    .input-codigo {
+      font-size: 20px; font-weight: 600; letter-spacing: 3px;
+      text-align: center; border: 2px solid var(--borde);
+      border-radius: 10px; padding: 12px; width: 100%;
+      font-family: monospace; outline: none;
+      transition: border-color .2s;
+    }
+    .input-codigo:focus { border-color: var(--naranja); box-shadow: 0 0 0 3px rgba(242,112,54,0.15); }
+
+    /* Botones */
+    .btn-primary-custom {
+      background: var(--naranja); color: #fff; border: none;
+      border-radius: 10px; padding: 12px 24px; font-weight: 600;
+      font-size: 14px; width: 100%; transition: background .2s;
+    }
+    .btn-primary-custom:hover { background: var(--naranja-hover); }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar-custom sticky-top shadow-sm">
+    <div class="container-xl px-3 px-md-5 py-3 d-flex align-items-center gap-3">
+      <img src="{{ url_for('static', filename='logo.png') }}" style="height:56px;" alt="Logo">
+      <a href="{{ url_for('donaciones.home') }}" class="ms-auto text-decoration-none d-flex align-items-center gap-1" style="font-size:14px; color:var(--texto-suave);">
+        <span class="material-symbols-outlined" style="font-size:18px;">home</span> Inicio
+      </a>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:960px; padding:32px 16px;">
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert {{ 'alert-success' if category == 'success' else 'alert-danger' }} mb-4">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Título -->
+    <div class="text-center mb-2">
+      <h1 class="fw-bold" style="font-size:22px;">Donación {{ publicacion.titulo }}</h1>
+      <p class="text-muted">#{{ '%07d'|format(transaccion.idTransaccion) }}</p>
+    </div>
+
+    <!-- Stepper -->
+    <div class="stepper">
+      <div class="step-circle {{ 'completado' if transaccion.estado.value in ['Verificada'] else 'activo' }}">1</div>
+      <div class="step-line {{ 'completado' if transaccion.estado.value == 'Verificada' }}"></div>
+      <div class="step-circle {{ 'activo' if transaccion.estado.value == 'Verificada' and not transaccion.fechaEntrega else ('completado' if transaccion.fechaEntrega else '') }}">2</div>
+      <div class="step-line {{ 'completado' if transaccion.fechaEntrega }}"></div>
+      <div class="step-circle {{ 'activo' if transaccion.fechaEntrega else '' }}">3</div>
+    </div>
+
+    <div class="row g-4">
+
+      <!-- Columna principal -->
+      <div class="col-12 col-lg-8">
+
+        {# ── ETAPA 1: Contacto ── #}
+        {% if transaccion.estado.value == 'Pendiente' %}
+        <div class="card-custom p-4 mb-4">
+          <h2 class="fw-bold mb-4" style="font-size:20px;">Etapa 1: Contacto</h2>
+
+          {% if es_donante %}
+          {# Vista del DONANTE #}
+          <div class="card-custom p-3 mb-4" style="background:#f8f9ff;">
+            <div class="d-flex align-items-center gap-3">
+              {% if beneficiario.foto_perfil %}
+                <img src="{{ url_for('static', filename='fotos/' + beneficiario.foto_perfil) }}" class="avatar-md">
+              {% else %}
+                <div class="avatar-md-placeholder">{{ beneficiario.nombre[0].upper() }}</div>
+              {% endif %}
+              <div>
+                <p class="fw-bold mb-0">{{ beneficiario.nombre }}</p>
+                <p class="text-muted mb-0" style="font-size:13px;">
+                  <span class="material-symbols-outlined" style="font-size:14px;">location_on</span>
+                  {{ beneficiario.ubicacion or 'Sin ubicación' }}
+                </p>
+              </div>
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:13px;">
+              Ya le mostramos tus datos de contacto a {{ beneficiario.nombre }}, cuando te contacte enviále el código de contacto para pasar a la siguiente etapa.
+            </p>
+          </div>
+
+          <div class="text-center mb-3">
+            <p class="fw-semibold mb-2">Codigo de Contacto</p>
+            <div class="codigo-box mx-auto" style="max-width:320px;">
+              {{ transaccion.codigoVerif }}
+            </div>
+            <p class="text-muted mt-2" style="font-size:13px;">
+              Dile a {{ beneficiario.nombre }} que coloque este codigo en su solicitud para seguir con el proceso
+            </p>
+          </div>
+
+          {% else %}
+          {# Vista del BENEFICIARIO — ingresar código #}
+          <p class="text-muted mb-4" style="font-size:14px;">
+            Contactate con {{ donante.nombre }} y pedile el código de verificación para continuar con el proceso.
+          </p>
+          <form method="POST" action="{{ url_for('donaciones.verificar_codigo', id=transaccion.idTransaccion) }}">
+            <label class="fw-semibold mb-2 d-block">Ingresá el código de verificación</label>
+            <input type="text" name="codigo" class="input-codigo mb-2"
+                   placeholder="000-000-000" maxlength="11">
+            <p class="text-muted mb-3" style="font-size:12px;">
+              El código expira el {{ transaccion.fechaExpiracion.strftime('%d/%m/%Y a las %H:%M') }}
+            </p>
+            <button type="submit" class="btn-primary-custom">Verificar código</button>
+          </form>
+          {% endif %}
+        </div>
+
+        {# ── ETAPA 2: Planificación de Entrega ── #}
+        {% elif transaccion.estado.value == 'Verificada' and not transaccion.fechaEntrega %}
+        <div class="card-custom p-4 mb-4">
+          <h2 class="fw-bold mb-2" style="font-size:20px;">Etapa 2: Planificación Entrega</h2>
+          <p class="text-muted mb-4" style="font-size:14px;">Ingresá qué día está planificada la entrega del objeto.</p>
+
+          <form method="POST" action="{{ url_for('donaciones.confirmar_fecha', id=transaccion.idTransaccion) }}">
+            <label class="fw-semibold mb-2 d-block">Seleccioná la fecha de entrega</label>
+            <input type="date" name="fecha_entrega"
+                   min="{{ transaccion.fechaCreacion.strftime('%Y-%m-%d') }}"
+                   class="form-control mb-3" style="font-size:16px; padding:12px; border-radius:10px;">
+            <button type="submit" class="btn-primary-custom">Confirmar fecha</button>
+          </form>
+        </div>
+
+        {# ── ETAPA 3: Entrega confirmada ── #}
+        {% elif transaccion.fechaEntrega %}
+        <div class="card-custom p-4 mb-4 text-center">
+          <div style="font-size:56px; margin-bottom:16px;">✅</div>
+          <h2 class="fw-bold mb-2" style="font-size:20px;">Etapa 3: Entrega Confirmada</h2>
+          <p class="text-muted" style="font-size:14px;">
+            La entrega está pactada para el
+            <strong>{{ transaccion.fechaEntrega.strftime('%d/%m/%Y') }}</strong>.
+          </p>
+          <p class="text-muted" style="font-size:13px;">
+            Dirección: <strong>{{ publicacion.ubicacion }}</strong>
+          </p>
+        </div>
+        {% endif %}
+
+      </div>
+
+      <!-- Columna derecha — Info publicación -->
+      <div class="col-12 col-lg-4">
+        <div class="card-custom p-3 sticky-top" style="top:24px;">
+          {% if publicacion.fotos %}
+            <img src="{{ url_for('static', filename='fotos/' + publicacion.fotos) }}" class="pub-img mb-3">
+          {% else %}
+            <div class="pub-img-placeholder mb-3">📦</div>
+          {% endif %}
+
+          <h3 class="fw-bold mb-2" style="font-size:16px;">{{ publicacion.titulo }}</h3>
+
+          <div class="d-flex flex-column gap-2">
+            <div style="font-size:13px; color:var(--texto-suave); display:flex; align-items:center; gap:6px;">
+              <span class="material-symbols-outlined" style="font-size:16px;">location_on</span>
+              {{ publicacion.ubicacion }}
+            </div>
+            <div style="font-size:13px; color:var(--texto-suave); display:flex; align-items:center; gap:6px;">
+              <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
+              {{ tiempo }}
+            </div>
+            <div class="estado-badge mt-1">
+              <div class="dot"></div>
+              En Progreso
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

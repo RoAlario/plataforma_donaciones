@@ -3,9 +3,10 @@ from flask_mail import Message
 from flask import jsonify
 from app.extensions import db, mail
 from app.models import (Publicacion, Categoria, Usuario, EstadoPublicacion, Direccion,
-                         SolicitudDonacion, EstadoSolicitudDonacion, Notificacion)
+                         SolicitudDonacion, EstadoSolicitudDonacion, Notificacion, Transaccion, EstadoTransaccion)
 from app.auth.routes import login_requerido
-from datetime import datetime
+from datetime import datetime, timedelta
+import random
 
 donaciones_bp = Blueprint('donaciones', __name__)
 
@@ -197,9 +198,7 @@ def detalle(id):
         donaciones_realizadas=donaciones_realizadas,
         tiempo=tiempo_transcurrido(publicacion.fechaEmisionPublicacion)
     )
-    
-    
-   
+
 # --- Solicitar donación ---
 @donaciones_bp.route('/donacion/<int:id>/solicitar', methods=['GET', 'POST'])
 @login_requerido
@@ -366,7 +365,6 @@ def aceptar_solicitud(id):
     flash('Solicitud aceptada. La donación pasó a "En progreso".', 'success')
     return redirect(url_for('donaciones.solicitudes_recibidas'))
 
-
 # --- Rechazar solicitud ---
 @donaciones_bp.route('/solicitud/<int:id>/rechazar', methods=['POST'])
 @login_requerido
@@ -515,3 +513,80 @@ def mis_solicitudes():
     return render_template('donaciones/mis_solicitudes.html',
                            usuario=usuario,
                            solicitudes=solicitudes)
+
+def generar_codigo_transaccion():
+    nums = [random.randint(100, 999) for _ in range(3)]
+    return f'{nums[0]}-{nums[1]}-{nums[2]}'
+
+@donaciones_bp.route('/coordinacion/<int:id>')
+def coordinacion(id):
+    usuario_id = session.get('usuario_id')
+    if not usuario_id:
+        return redirect(url_for('auth.login'))
+    transaccion = Transaccion.query.get_or_404(id)
+    usuario = Usuario.query.get(usuario_id)
+    es_donante = transaccion.codDonante == usuario_id
+    return render_template('donaciones/coordinacion.html',
+        transaccion=transaccion, usuario=usuario, es_donante=es_donante,
+        publicacion=transaccion.publicacion, donante=transaccion.donante,
+        beneficiario=transaccion.beneficiario,
+        tiempo=tiempo_transcurrido(transaccion.publicacion.fechaEmisionPublicacion)
+    )
+
+@donaciones_bp.route('/coordinacion/<int:id>/verificar', methods=['POST'])
+def verificar_codigo(id):
+    usuario_id = session.get('usuario_id')
+    if not usuario_id:
+        return redirect(url_for('auth.login'))
+    transaccion = Transaccion.query.get_or_404(id)
+    codigo_ingresado = request.form.get('codigo', '').strip()
+    if datetime.utcnow() > transaccion.fechaExpiracion:
+        _expirar_transaccion(transaccion)
+        flash('El código expiró. La donación volvió a estar disponible.', 'error')
+        return redirect(url_for('donaciones.home'))
+    if codigo_ingresado == transaccion.codigoVerif:
+        transaccion.estado = EstadoTransaccion.VERIFICADA
+        db.session.commit()
+        return redirect(url_for('donaciones.coordinacion', id=id))
+    else:
+        flash('Código incorrecto. Intentá de nuevo.', 'error')
+        return redirect(url_for('donaciones.coordinacion', id=id))
+
+@donaciones_bp.route('/coordinacion/<int:id>/fecha', methods=['POST'])
+def confirmar_fecha(id):
+    usuario_id = session.get('usuario_id')
+    if not usuario_id:
+        return redirect(url_for('auth.login'))
+    transaccion = Transaccion.query.get_or_404(id)
+    fecha_str = request.form.get('fecha_entrega', '')
+    if not fecha_str:
+        flash('Debés seleccionar una fecha de entrega.', 'error')
+        return redirect(url_for('donaciones.coordinacion', id=id))
+    transaccion.fechaEntrega = datetime.strptime(fecha_str, '%Y-%m-%d')
+    db.session.commit()
+    flash('¡Fecha de entrega confirmada!', 'success')
+    return redirect(url_for('donaciones.coordinacion', id=id))
+
+def _expirar_transaccion(transaccion):
+    transaccion.estado = EstadoTransaccion.EXPIRADA
+    publicacion = transaccion.publicacion
+    estado_disponible = EstadoPublicacion.query.filter_by(nombreEP='Disponible').first()
+    publicacion.codEstadoPublicacion = estado_disponible.codEstadoPublicacion
+    db.session.commit()
+    try:
+        for destinatario in [transaccion.donante, transaccion.beneficiario]:
+            msg = Message(
+                subject='Solicitud de donación expirada',
+                sender=current_app.config['MAIL_USERNAME'],
+                recipients=[destinatario.email]
+            )
+            msg.body = (
+                f'Hola {destinatario.nombre},\n\n'
+                f'La solicitud de donación "{publicacion.titulo}" expiró '
+                f'porque no se verificó el código en 24 horas.\n'
+                f'La donación volvió a estar disponible para otros usuarios.'
+            )
+            mail.send(msg)
+    except Exception as e:
+        print(f'[MAIL ERROR] {e}')
+
