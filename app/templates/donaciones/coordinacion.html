@@ -114,11 +114,11 @@
 
     <!-- Stepper -->
     <div class="stepper">
-      <div class="step-circle {{ 'completado' if transaccion.estado.value in ['Verificada'] else 'activo' }}">1</div>
-      <div class="step-line {{ 'completado' if transaccion.estado.value == 'Verificada' }}"></div>
-      <div class="step-circle {{ 'activo' if transaccion.estado.value == 'Verificada' and not transaccion.fechaEntrega else ('completado' if transaccion.fechaEntrega else '') }}">2</div>
-      <div class="step-line {{ 'completado' if transaccion.fechaEntrega }}"></div>
-      <div class="step-circle {{ 'activo' if transaccion.fechaEntrega else '' }}">3</div>
+      <div class="step-circle completado">1</div>
+      <div class="step-line {{ 'completado' if transaccion.estado.value in ['Verificada', 'Finalizada'] }}"></div>
+      <div class="step-circle {{ 'completado' if transaccion.fechaEntrega else 'activo' if transaccion.estado.value == 'Verificada' else '' }}">2</div>
+      <div class="step-line {{ 'completado' if transaccion.estado.value == 'Finalizada' }}"></div>
+      <div class="step-circle {{ 'completado' if transaccion.estado.value == 'Finalizada' else 'activo' if transaccion.fechaEntrega else '' }}">3</div>
     </div>
 
     <div class="row g-4">
@@ -184,33 +184,105 @@
         {% elif transaccion.estado.value == 'Verificada' and not transaccion.fechaEntrega %}
         <div class="card-custom p-4 mb-4">
           <h2 class="fw-bold mb-2" style="font-size:20px;">Etapa 2: Planificación Entrega</h2>
-          <p class="text-muted mb-4" style="font-size:14px;">Ingresá qué día está planificada la entrega del objeto.</p>
 
+        {% if es_donante %}
+        {# Solo el DONANTE puede seleccionar la fecha #}
+          <p class="text-muted mb-4" style="font-size:14px;">Ingresá qué día está planificada la entrega del objeto.</p>
           <form method="POST" action="{{ url_for('donaciones.confirmar_fecha', id=transaccion.idTransaccion) }}">
             <label class="fw-semibold mb-2 d-block">Seleccioná la fecha de entrega</label>
             <input type="date" name="fecha_entrega"
-                   min="{{ transaccion.fechaCreacion.strftime('%Y-%m-%d') }}"
-                   class="form-control mb-3" style="font-size:16px; padding:12px; border-radius:10px;">
+              min="{{ transaccion.fechaCreacion.strftime('%Y-%m-%d') }}"
+              class="form-control mb-3" style="font-size:16px; padding:12px; border-radius:10px;">
             <button type="submit" class="btn-primary-custom">Confirmar fecha</button>
           </form>
-        </div>
 
-        {# ── ETAPA 3: Entrega confirmada ── #}
-        {% elif transaccion.fechaEntrega %}
-        <div class="card-custom p-4 mb-4 text-center">
-          <div style="font-size:56px; margin-bottom:16px;">✅</div>
-          <h2 class="fw-bold mb-2" style="font-size:20px;">Etapa 3: Entrega Confirmada</h2>
-          <p class="text-muted" style="font-size:14px;">
-            La entrega está pactada para el
-            <strong>{{ transaccion.fechaEntrega.strftime('%d/%m/%Y') }}</strong>.
+        {% else %}
+        {# Vista del BENEFICIARIO — solo espera #}
+          <p class="text-muted mb-0" style="font-size:14px;">
+            El donante está coordinando la fecha de entrega. Te notificaremos cuando esté confirmada.
           </p>
-          <p class="text-muted" style="font-size:13px;">
-            Dirección: <strong>{{ publicacion.ubicacion }}</strong>
-          </p>
-        </div>
+          <div class="text-center mt-4" style="font-size:48px;">⏳</div>
         {% endif %}
 
+          </div>  
+
+        {# ── ETAPA 3: Entrega confirmada ── #}
+        {% elif transaccion.fechaEntrega and transaccion.estado.value != 'Finalizada' %}
+        <div class="card-custom p-4 mb-4">
+          <h2 class="fw-bold mb-2" style="font-size:20px;">Etapa 3: Verificación Entrega</h2>
+
+          {% if not es_donante %}
+          {# Vista BENEFICIARIO — genera y muestra el código #}
+          <p class="text-muted mb-4" style="font-size:14px;">
+          Ingresá el código de verificación que te envió {{ donante.nombre }} para finalizar el proceso de donación.
+          </p>
+
+          {% if transaccion.codigoEntrega %}
+          <div class="codigo-box mx-auto mb-3" style="max-width:320px;">
+            {{ transaccion.codigoEntrega }}
+          </div>
+          <p class="text-muted mb-3" style="font-size:13px;">
+          Mostrá este código al donante para que lo ingrese en la plataforma.
+          </p>
+          {% else %}
+          <form method="POST" action="{{ url_for('donaciones.generar_codigo_entrega', id=transaccion.idTransaccion) }}">
+          <button type="submit" class="btn-primary-custom">
+          Generar código de entrega
+          </button>
+          </form>
+          {% endif %}
+
+          {% else %}
+          {# Vista DONANTE — ingresa el código #}
+          <p class="text-muted mb-4" style="font-size:14px;">
+          Ingresá el código de verificación que te dio {{ beneficiario.nombre }} para confirmar la entrega.
+          </p>
+          <form method="POST" action="{{ url_for('donaciones.verificar_entrega', id=transaccion.idTransaccion) }}">
+          <label class="fw-semibold mb-2 d-block">Código de verificación de entrega</label>
+          <input type="text" name="codigo_entrega" class="input-codigo mb-2" placeholder="000-000-000" maxlength="11">
+          <button type="submit" class="btn-primary-custom mt-2">Verificar Código</button>
+          </form>
+          {% endif %}
+        </div>
+
+        {# ── DONACIÓN FINALIZADA ── #}
+        {% elif transaccion.estado.value == 'Finalizada' %}
+      <div class="card-custom p-4 mb-4 text-center">
+      <h2 class="fw-bold mb-4" style="font-size:24px; color:var(--verde);">
+      Donación finalizada con éxito 
+      </h2>
+
+      {% if publicacion.fotos %}
+      <img src="{{ url_for('static', filename='fotos/' + publicacion.fotos) }}"
+         style="width:200px; height:200px; object-fit:cover; border-radius:16px;" class="mb-3">
+      {% endif %}
+
+      <h3 class="fw-bold mb-1" style="font-size:18px;">{{ publicacion.titulo }}</h3>
+      <div style="font-size:13px; color:var(--texto-suave);" class="mb-1">
+        <span class="material-symbols-outlined" style="font-size:14px;">location_on</span>
+        {{ publicacion.ubicacion }}
       </div>
+      <div style="font-size:13px; color:var(--texto-suave);" class="mb-3">
+        <span class="material-symbols-outlined" style="font-size:14px;">schedule</span>
+        {{ tiempo }}
+      </div>
+      <div class="mb-4">
+        <span style="background:#f27036; color:#fff; border-radius:20px; padding:4px 12px; font-size:13px;">
+        ● Finalizado
+        </span>
+      </div>
+
+      <h3 class="fw-bold" style="font-size:20px; color:var(--verde);">
+      Muchas gracias por tu colaboración
+      </h3>
+      <a href="{{ url_for('donaciones.home') }}" class="btn-primary-custom d-inline-block mt-3"
+      style="width:auto; padding:12px 32px; text-decoration:none;">
+      Volver al inicio
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
 
       <!-- Columna derecha — Info publicación -->
       <div class="col-12 col-lg-4">

@@ -42,7 +42,19 @@
           </div>
           <p class="mb-2" style="font-size:13px; color:var(--texto-suave);">{{ s.razon }}</p>
           <p class="text-muted mb-0" style="font-size:12px;">Enviada: {{ s.fechaSolicitud.strftime('%d/%m/%Y %H:%M') }}</p>
-        </div>
+
+{% if s.estado.value == 'Aceptada' %}
+  {% set transaccion = s.publicacion.transacciones | selectattr('codBeneficiario', 'equalto', usuario.codUsuario) | first %}
+  {% if transaccion %}
+    <a href="{{ url_for('donaciones.coordinacion', id=transaccion.idTransaccion) }}"
+       class="btn mt-3 w-100 fw-semibold rounded-3 text-white"
+       style="background: var(--naranja);">
+      <span class="material-symbols-outlined align-middle me-1" style="font-size:16px;">open_in_new</span>
+      Ver coordinación
+    </a>
+  {% endif %}
+{% endif %}
+</div>
       {% endfor %}
     {% else %}
       <div class="text-center py-5 text-muted">

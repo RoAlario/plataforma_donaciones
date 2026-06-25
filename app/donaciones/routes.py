@@ -658,3 +658,103 @@ def _expirar_transaccion(transaccion):
 
     db.session.commit()
 
+@donaciones_bp.route('/coordinacion/<int:id>/verificar-entrega', methods=['POST'])
+@login_requerido
+def verificar_entrega(id):
+    usuario_id = session.get('usuario_id')
+    transaccion = Transaccion.query.get_or_404(id)
+
+    # Solo el donante puede verificar la entrega
+    if transaccion.codDonante != usuario_id:
+        flash('No tenés permisos para esta acción.', 'error')
+        return redirect(url_for('donaciones.home'))
+
+    codigo_ingresado = request.form.get('codigo_entrega', '').strip()
+
+    if codigo_ingresado != transaccion.codigoEntrega:
+        flash('Código de entrega incorrecto.', 'error')
+        return redirect(url_for('donaciones.coordinacion', id=id))
+
+    #  Finalizar la donación
+    publicacion = transaccion.publicacion
+    estado_finalizado = EstadoPublicacion.query.filter_by(nombreEP='Finalizado').first()
+    if estado_finalizado:
+        publicacion.codEstadoPublicacion = estado_finalizado.codEstadoPublicacion
+
+    transaccion.estado = EstadoTransaccion.FINALIZADA
+
+    # Actualizar contadores
+    donante = transaccion.donante
+    beneficiario = transaccion.beneficiario
+    donante.cantDonaciones = (donante.cantDonaciones or 0) + 1
+    db.session.commit()
+
+    # Notificaciones
+    notif_donante = Notificacion(
+        mensaje=f'¡Tu donación "{publicacion.titulo}" fue entregada con éxito!',
+        usuario_id=donante.codUsuario,
+        enlace=url_for('donaciones.coordinacion', id=id)
+    )
+    notif_beneficiario = Notificacion(
+        mensaje=f'¡Recibiste la donación "{publicacion.titulo}" con éxito!',
+        usuario_id=beneficiario.codUsuario,
+        enlace=url_for('donaciones.coordinacion', id=id)
+    )
+    db.session.add(notif_donante)
+    db.session.add(notif_beneficiario)
+    db.session.commit()
+
+    # Emails
+    try:
+        for dest in [donante, beneficiario]:
+            msg = Message(
+                subject=f'Donación "{publicacion.titulo}" finalizada',
+                sender=current_app.config['MAIL_USERNAME'],
+                recipients=[dest.email]
+            )
+            msg.body = (
+                f'Hola {dest.nombre},\n\n'
+                f'La donación "{publicacion.titulo}" fue completada exitosamente.\n'
+                f'¡Gracias por ser parte de la comunidad!'
+            )
+            mail.send(msg)
+    except Exception as e:
+        print(f'[MAIL ERROR] {e}')
+
+    flash('¡Donación finalizada con éxito!', 'success')
+    return redirect(url_for('donaciones.coordinacion', id=id))
+
+@donaciones_bp.route('/coordinacion/<int:id>/generar-codigo-entrega', methods=['POST'])
+@login_requerido
+def generar_codigo_entrega(id):
+    usuario_id = session.get('usuario_id')
+    transaccion = Transaccion.query.get_or_404(id)
+
+    # Solo el beneficiario puede solicitar el código
+    if transaccion.codBeneficiario != usuario_id:
+        flash('No tenés permisos para esta acción.', 'error')
+        return redirect(url_for('donaciones.home'))
+
+    codigo = generar_codigo_transaccion()
+    transaccion.codigoEntrega = codigo
+    db.session.commit()
+
+    # Enviar código al beneficiario por email
+    try:
+        msg = Message(
+            subject='Código de verificación de entrega',
+            sender=current_app.config['MAIL_USERNAME'],
+            recipients=[transaccion.beneficiario.email]
+        )
+        msg.body = (
+            f'Hola {transaccion.beneficiario.nombre},\n\n'
+            f'Tu código de verificación de entrega es: {codigo}\n\n'
+            f'Entregáselo al donante para confirmar la recepción.'
+        )
+        mail.send(msg)
+    except Exception as e:
+        print(f'[MAIL ERROR] {e}')
+
+    flash('Código de entrega generado y enviado a tu email.', 'success')
+    return redirect(url_for('donaciones.coordinacion', id=id))
+
