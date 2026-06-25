@@ -31,7 +31,7 @@
     .btn-verificar:hover { background: #e06e10; }
     .reenviar { margin-top: 18px; font-size: 14px; color: #555; }
     .reenviar a { color: #FD8223; font-weight: 500; text-decoration: none; }
-    .error { color: #CD1800; font-size: 14px; margin-bottom: 12px; }
+    .error { color: #df280f; font-size: 14px; margin-bottom: 12px; }
   </style>
 </head>
 <body>
@@ -39,8 +39,8 @@
     <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
     <h2>Verificá tu cuenta</h2>
     <p class="descripcion">
-      Enviamos un código de 6 dígitos a tu correo.<br>
-      Ingresalo para activar tu cuenta.
+      Enviamos un código de 6 dígitos a tu correo<br>
+      Ingresalo para continuar
     </p>
 
     {% with messages = get_flashed_messages(with_categories=true) %}

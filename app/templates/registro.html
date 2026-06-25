@@ -41,7 +41,7 @@
 <body>
   <div class="card-registro">
     <img src="{{ url_for('static', filename='logo.png') }}" class="logo" alt="Logo">
-    <h2>Registro</h2>
+    <h2>Registrate</h2>
     <p class="subtitulo">para comenzar</p>
 
     <form method="POST" action="{{ url_for('auth.registro') }}" enctype="multipart/form-data" novalidate>
@@ -77,7 +77,7 @@
         <div class="invalid-feedback d-block">{{ errores.email }}</div>
       {% endif %}
 
-      <!-- Teléfono -->
+      <!-- Telefono -->
       <p class="label-campo">Teléfono <span>*</span></p>
       <input type="text" name="telefono"
              class="form-control {% if errores.telefono %}is-invalid{% endif %}"

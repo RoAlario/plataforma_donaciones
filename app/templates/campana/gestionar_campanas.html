@@ -12,8 +12,8 @@
       --naranja:       #f27036;
       --naranja-hover: #a63b00;
       --naranja-light: #f2e0c8;
-      --texto:         #121c2a;
-      --texto-suave:   #584239;
+      --texto:         #171d26;
+      --texto-suave:   #121c2a;
       --borde:         #dfc0b4;
     }
     body { font-family: 'Inter', sans-serif; background: #f8f9ff; color: var(--texto); }
@@ -58,7 +58,6 @@
   <header class="navbar-custom sticky-top shadow-sm">
     <div class="container-xl px-3 px-md-5 py-3 d-flex align-items-center gap-3">
       <img src="{{ url_for('static', filename='logo.png') }}" style="height:64px;" alt="Logo">
-      <span class="fw-bold" style="color:var(--naranja-hover); font-size:18px;">Panel de Administración</span>
       <div class="ms-auto d-flex align-items-center gap-3">
         <a href="{{ url_for('donaciones.home') }}"
            class="d-flex align-items-center gap-1 text-decoration-none"
@@ -224,9 +223,8 @@
 
     {% else %}
     <div class="text-center py-5" style="color:var(--texto-suave);">
-      <div style="font-size:64px;">📭</div>
-      <p class="fs-5 fw-medium mt-2">No hay solicitudes pendientes.</p>
-      <p class="text-muted">Todas las peticiones han sido evaluadas.</p>
+      <p class="fs-5 fw-medium mt-2">No hay solicitudes pendientes</p>
+      <p class="text-muted">Todas las peticiones han sido evaluadas</p>
     </div>
     {% endif %}
 

@@ -136,7 +136,7 @@ def publicar():
         if errores:
             return render_template('donaciones/publicar.html',
                 errores=errores, categorias=categorias,
-                valores=request.form)
+                valores=request.form, usuario=usuario)
 
         # Guardar dirección
         nueva_dir = Direccion(nombreCalle=direccion)
@@ -186,7 +186,7 @@ def publicar():
         return redirect(url_for('donaciones.home'))
 
     return render_template('donaciones/publicar.html',
-        errores={}, categorias=categorias, valores={})
+        errores={}, categorias=categorias, valores={}, usuario=usuario)
     
 @donaciones_bp.route('/donacion/<int:id>')
 def detalle(id):
@@ -545,6 +545,8 @@ def mis_solicitudes():
     return render_template('donaciones/mis_solicitudes.html',
                            usuario=usuario,
                            solicitudes=solicitudes)
+
+
 # --- Evaluar solicitudes (US-08) ---
 @donaciones_bp.route('/donacion/<int:id>/solicitudes')
 @login_requerido
@@ -757,4 +759,68 @@ def generar_codigo_entrega(id):
 
     flash('Código de entrega generado y enviado a tu email.', 'success')
     return redirect(url_for('donaciones.coordinacion', id=id))
+
+
+
+# --- Ajustes ---
+@donaciones_bp.route('/ajustes', methods=['GET', 'POST'])
+@login_requerido
+def ajustes():
+    usuario = Usuario.query.get(session['usuario_id'])
+    errores = {}
+    exito = None
+
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        ubicacion = request.form.get('ubicacion', '').strip()
+        contra_actual = request.form.get('contra_actual', '')
+        contra_nueva = request.form.get('contra_nueva', '')
+        contra_repetir = request.form.get('contra_repetir', '')
+
+        if not nombre:
+            errores['nombre'] = 'El nombre es obligatorio.'
+        if not telefono:
+            errores['telefono'] = 'El teléfono es obligatorio.'
+
+        if contra_nueva:
+            from werkzeug.security import check_password_hash, generate_password_hash
+            if not contra_actual:
+                errores['contra_actual'] = 'Ingresá tu contraseña actual.'
+            elif not check_password_hash(usuario.contrasena, contra_actual):
+                errores['contra_actual'] = 'La contraseña actual es incorrecta.'
+            elif contra_nueva != contra_repetir:
+                errores['contra_repetir'] = 'Las contraseñas no coinciden.'
+            elif len(contra_nueva) < 6:
+                errores['contra_nueva'] = 'La contraseña debe tener al menos 6 caracteres.'
+
+        foto = request.files.get('foto_perfil')
+        foto_nombre = usuario.foto_perfil
+        if foto and foto.filename != '':
+            from werkzeug.utils import secure_filename
+            import os
+            ext = foto.filename.rsplit('.', 1)[-1].lower()
+            if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
+                foto_nombre = secure_filename(foto.filename)
+                foto.save(os.path.join(current_app.root_path, 'static', 'fotos', foto_nombre))
+            else:
+                errores['foto_perfil'] = 'Formato de imagen no válido.'
+
+        if errores:
+            return render_template('donaciones/ajustes.html', usuario=usuario, errores=errores, valores=request.form)
+
+        usuario.nombre = nombre
+        usuario.telefono = telefono
+        usuario.ubicacion = ubicacion
+        if contra_nueva:
+            from werkzeug.security import generate_password_hash
+            usuario.contrasena = generate_password_hash(contra_nueva)
+        if foto_nombre != usuario.foto_perfil:
+            usuario.foto_perfil = foto_nombre
+        db.session.commit()
+
+        flash('Ajustes guardados correctamente.', 'success')
+        return redirect(url_for('donaciones.ajustes'))
+
+    return render_template('donaciones/ajustes.html', usuario=usuario, errores={}, valores={})
 
