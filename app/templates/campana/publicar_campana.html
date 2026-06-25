@@ -47,6 +47,16 @@
     .cat-label { font-size: 11px; font-weight: 500; color: var(--texto-suave); }
     .cats-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
     .cats-scroll::-webkit-scrollbar { display: none; }
+    .cats-wrapper { position: relative; display: flex; align-items: center; gap: 8px; }
+    .cats-arrow {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 1px solid var(--borde); background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 16px; color: var(--texto-suave);
+      flex-shrink: 0; transition: background .2s;
+    }
+    .cats-arrow:hover { background: var(--naranja-light); }
+    .cats-arrow:disabled { opacity: 0.3; cursor: default; }
     .contador-wrap { display: flex; align-items: center; gap: 12px; }
     .btn-contador {
       width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--borde);
@@ -62,13 +72,98 @@
       transition: background .2s; cursor: pointer; margin-top: 16px;
     }
     .btn-publicar:hover { background: var(--naranja-hover); }
-    .btn-volver { font-size: 14px; color: var(--texto-suave); text-decoration: none; transition: color .2s; }
-    .btn-volver:hover { color: var(--naranja-hover); }
+
+    /* Navbar */
+    .navbar-custom { background: var(--naranja-light); border-bottom: 1px solid var(--borde); }
+    .dropdown-header-custom { padding: 12px 16px; border-bottom: 1px solid var(--borde); }
+    .dropdown-item-danger { color: #dc3545; }
+    .dropdown-item-danger:hover { background: #fff3f3; }
+    .avatar-circle {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--naranja);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+    }
+
+    /* Volver arriba */
+    .volver-top { font-size: 14px; color: var(--texto-suave); text-decoration: none; transition: color .2s; display: inline-flex; align-items: center; gap: 4px; }
+    .volver-top:hover { color: var(--naranja-hover); }
   </style>
 </head>
 <body>
 
-  <div class="container py-5" style="max-width: 560px;">
+  <!-- NAVBAR -->
+  <header class="navbar-custom sticky-top shadow-sm">
+    <div class="container-xl px-3 px-md-5 py-3">
+      <div class="d-flex align-items-center gap-3">
+
+        <!-- Logo -->
+        <a href="{{ url_for('donaciones.home') }}">
+          <img src="{{ url_for('static', filename='logo.png') }}" style="height:64px;" class="flex-shrink-0" alt="Logo">
+        </a>
+
+        <!-- Iconos derecha -->
+        <div class="d-flex align-items-center gap-3 ms-auto">
+          <div class="dropdown">
+            <button class="btn p-0 border-0 position-relative" data-bs-toggle="dropdown" style="color: var(--naranja-hover);">
+              <span class="material-symbols-outlined">notifications</span>
+              <span id="badge-notif" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none; font-size:10px;">0</span>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end shadow" style="width:340px; max-height:400px; overflow-y:auto; border-radius:12px;">
+              <h6 class="dropdown-header fw-bold" style="font-size:14px;">Notificaciones</h6>
+              <div id="lista-notif">
+                <p class="text-center text-muted py-3" style="font-size:13px;">Cargando...</p>
+              </div>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item text-center" id="btn-marcar-leidas" style="font-size:13px; color:var(--naranja);">Marcar todas como leídas</button>
+            </div>
+          </div>
+
+          <!-- Dropdown perfil -->
+          <div class="dropdown">
+            <button class="btn p-0 border-0 d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+              <div class="avatar-circle" style="overflow:hidden;">
+                {% if usuario.foto_perfil %}
+                  <img src="{{ url_for('static', filename='fotos/' + usuario.foto_perfil) }}" style="width:100%;height:100%;object-fit:cover;" alt="Foto">
+                {% else %}
+                  {{ usuario.nombre[0].upper() }}
+                {% endif %}
+              </div>
+              <span class="d-none d-md-block" style="font-size:14px; font-weight:500;">{{ usuario.nombre }}</span>
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--texto-suave);">expand_more</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+              <li class="dropdown-header-custom">
+                <p class="mb-0 fw-semibold" style="font-size:14px;">{{ usuario.nombre }}</p>
+                <p class="mb-0 text-muted" style="font-size:12px;">{{ usuario.email }}</p>
+              </li>
+              <li><a class="dropdown-item" href="{{ url_for('donaciones.mis_donaciones') }}">
+                <span class="material-symbols-outlined">volunteer_activism</span> Mis donaciones
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('donaciones.mis_solicitudes') }}">
+                <span class="material-symbols-outlined">inbox</span> Solicitudes
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('donaciones.ajustes') }}">
+                <span class="material-symbols-outlined">settings</span> Ajustes
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('campana.solicitar_campana') }}">
+                <span class="material-symbols-outlined">campaign</span> Solicitar Campaña
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item dropdown-item-danger" href="{{ url_for('auth.logout') }}">
+                <span class="material-symbols-outlined">logout</span> Salir
+              </a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="px-5 py-3">
+    <a href="{{ url_for('donaciones.home') }}" class="volver-top">← Volver al inicio</a>
+  </div>
+
+  <div class="container py-4" style="max-width: 560px;">
 
     <div class="text-center mb-4">
       <h1 class="fw-bold" style="font-size: 22px;">Públicar Nueva Campaña</h1>
@@ -77,12 +172,12 @@
     {# Mensaje restrictivo si no tiene permiso #}
     {% if sin_permiso %}
     <div class="form-card text-center py-5">
-      <div style="font-size: 56px; margin-bottom: 16px;">🔒</div>
+      <div style="font-size: 56px; margin-bottom: 16px;"></div>
       <h2 class="fw-semibold mb-2" style="font-size: 18px;">Acceso restringido</h2>
       <p class="text-muted mb-4" style="font-size: 14px;">
         Su perfil no cuenta con los permisos necesarios para publicar campañas en este momento.
       </p>
-      <a href="{{ url_for('donaciones.home') }}" class="btn-volver">← Volver al inicio</a>
+      <a href="{{ url_for('donaciones.home') }}" class="volver-top">← Volver al inicio</a>
     </div>
 
     {% else %}
@@ -111,7 +206,7 @@
 
         <!-- Nombre -->
         <div class="mb-3">
-          <label class="form-label-custom">Nombre de la Campaña <span class="text-danger">*</span></label>
+          <label class="form-label-custom">Nombre de la campaña <span class="text-danger">*</span></label>
           <input type="text" name="titulo" value="{{ valores.get('titulo', '') }}"
                  placeholder="Ej: Abrigos para el invierno"
                  class="input-custom {{ 'is-invalid' if errores.titulo }}">
@@ -149,27 +244,31 @@
             <div class="text-danger mb-2" style="font-size:12px;">{{ errores.categoria }}</div>
           {% endif %}
           {% set fotos_cat = {
-            'Ropa': 'categorias/ropa.avif', 'Muebles': 'categorias/sillon.avif',
-            'Medicamentos': 'categorias/medicamento.webp', 'Juguetes': 'categorias/jueguetse.png',
-            'Electrónico': 'categorias/electronica.webp', 'Alimento': 'categorias/alimentos.png'
+            'Ropa': 'categorias/ropa.avif',             'Muebles': 'categorias/sillon.jpeg',
+            'Medicamentos': 'categorias/medicamento.webp', 'Juguetes': 'categorias/juguetes.webp',
+            'Electrónico': 'categorias/electronica.jpg', 'Alimento': 'categorias/alimentos.png'
           } %}
           <input type="hidden" name="categoria_id" id="categoria_id" value="{{ valores.get('categoria_id', '') }}">
-          <div class="cats-scroll">
-            {% for cat in categorias %}
-              <button type="button"
-                      onclick="seleccionarCategoria({{ cat.codCategoria }})"
-                      class="cat-btn {{ 'activa' if valores.get('categoria_id', '')|string == cat.codCategoria|string }}"
-                      id="cat-{{ cat.codCategoria }}">
-                <div class="cat-img">
-                  {% if cat.nombreCategoria in fotos_cat %}
-                    <img src="{{ url_for('static', filename=fotos_cat[cat.nombreCategoria]) }}" alt="{{ cat.nombreCategoria }}">
-                  {% else %}
-                    <div style="width:100%;height:100%;background:#e6eeff;display:flex;align-items:center;justify-content:center;">📦</div>
-                  {% endif %}
-                </div>
-                <span class="cat-label">{{ cat.nombreCategoria }}</span>
-              </button>
-            {% endfor %}
+          <div class="cats-wrapper">
+            <button type="button" class="cats-arrow" onclick="scrollCats(this, -1)">&#8249;</button>
+            <div class="cats-scroll">
+              {% for cat in categorias %}
+                <button type="button"
+                        onclick="seleccionarCategoria({{ cat.codCategoria }})"
+                        class="cat-btn {{ 'activa' if valores.get('categoria_id', '')|string == cat.codCategoria|string }}"
+                        id="cat-{{ cat.codCategoria }}">
+                  <div class="cat-img">
+                    {% if cat.nombreCategoria in fotos_cat %}
+                      <img src="{{ url_for('static', filename=fotos_cat[cat.nombreCategoria]) }}" alt="{{ cat.nombreCategoria }}">
+                    {% else %}
+                      <div style="width:100%;height:100%;background:#e6eeff;display:flex;align-items:center;justify-content:center;">...</div>
+                    {% endif %}
+                  </div>
+                  <span class="cat-label">{{ cat.nombreCategoria }}</span>
+                </button>
+              {% endfor %}
+            </div>
+            <button type="button" class="cats-arrow" onclick="scrollCats(this, 1)">&#8250;</button>
           </div>
         </div>
 
@@ -204,10 +303,6 @@
           Publicar Campaña
         </button>
 
-        <div class="text-center mt-3">
-          <a href="{{ url_for('donaciones.home') }}" class="btn-volver">← Volver al inicio</a>
-        </div>
-
       </form>
     </div>
     {% endif %}
@@ -216,6 +311,12 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    function scrollCats(btn, dir) {
+      const wrapper = btn.closest('.cats-wrapper');
+      const scroll = wrapper.querySelector('.cats-scroll');
+      scroll.scrollBy({ left: dir * 200, behavior: 'smooth' });
+    }
+
     function seleccionarCategoria(id) {
       document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('activa'));
       document.getElementById('cat-' + id).classList.add('activa');

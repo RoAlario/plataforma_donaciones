@@ -24,7 +24,7 @@ def home():
 
     from app.models import Peticion
     try:
-        solicitudes_activas = Peticion.query.count()
+        solicitudes_activas = Peticion.query.filter_by(estado=EstadoPeticion.PENDIENTE).count()
     except:
         solicitudes_activas = 0
 
@@ -54,12 +54,10 @@ def home():
 
     # Moderación — últimas 5 publicaciones
     moderacion = Publicacion.query.order_by(
-        Publicacion.fechaEmisionPublicacion.desc()
-    ).limit(5).all()
+        Publicacion.fechaEmisionPublicacion.desc()).limit(5).all()
     
     peticiones_pendientes = Peticion.query.filter_by(
-        estado=EstadoPeticion.PENDIENTE
-    ).order_by(Peticion.fechaEmitida.asc()).limit(5).all()
+        estado=EstadoPeticion.PENDIENTE).order_by(Peticion.fechaEmitida.asc()).limit(5).all()
     
 
     return render_template('admin/home.html',
