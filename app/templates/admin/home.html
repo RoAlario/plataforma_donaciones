@@ -381,12 +381,12 @@
     });
 
     // Modal rechazar petición
-    document.getElementById('modalRechazar').addEventListener('show.bs.modal', e => {
-      const btn = e.relatedTarget;
-      const id = btn.dataset.id;
-      document.getElementById('rechazarPeticionId').value = id;
-      document.getElementById('formRechazar').action = '/admin/rechazar_peticion/' + id;
-    });
+  document.getElementById('modalRechazar').addEventListener('show.bs.modal', e => {
+    const btn = e.relatedTarget;
+    const id = btn.dataset.id;
+    document.getElementById('formRechazar').action =
+        "{{ url_for('campana.rechazar_peticion', id=0) }}".replace('/0', '/' + id);
+});
   </script>
 
 </body>

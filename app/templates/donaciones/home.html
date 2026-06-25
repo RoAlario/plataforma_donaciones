@@ -230,6 +230,45 @@
       </div>
     </section>
 
+    <!-- CAMPAÑAS ACTIVAS -->
+{% if campanas %}
+<section class="mb-5">
+  <h2 class="fw-bold fs-4 mb-4">Campañas activas</h2>
+  <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+    {% for c in campanas %}
+      <div class="col">
+        <div class="dona-card h-100" style="border-left: 4px solid #006a61;">
+          <div class="dona-img">
+            {% if c.foto %}
+              <img src="{{ url_for('static', filename='fotos/' + c.foto) }}" alt="{{ c.titulo }}">
+            {% else %}
+              <div class="dona-placeholder">📣</div>
+            {% endif %}
+          </div>
+          <div class="dona-body">
+            <div class="dona-titulo">{{ c.titulo }}</div>
+            <div class="dona-meta mt-1">
+              <span class="material-symbols-outlined">location_on</span> {{ c.ubicacion }}
+            </div>
+            <div class="dona-meta mt-1">
+              <span class="material-symbols-outlined">schedule</span> {{ c.tiempo }}
+            </div>
+            <div class="dona-meta mt-1">
+              <span class="material-symbols-outlined">inventory</span>
+              Meta: {{ c.cantidadNecesaria }} artículos
+            </div>
+            <div class="mt-2">
+              <span class="badge" style="background:#006a61; color:#fff; font-size:11px;">Campaña activa</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+
     <!-- DONACIONES -->
     <section>
       <h2 class="fw-bold fs-4 mb-4">Donaciones recientes</h2>

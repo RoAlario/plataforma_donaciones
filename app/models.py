@@ -68,6 +68,7 @@ class Publicacion(db.Model):
     fechaVencimiento = db.Column(db.DateTime, nullable=True)
     receta           = db.Column(db.Boolean,  nullable=True)
     marca = db.Column(db.String(20), nullable=True)
+    conservacion = db.Column(db.String(30), nullable=True)
 
     donante = db.relationship('Usuario', foreign_keys=[codUsuario], backref='publicaciones')
 

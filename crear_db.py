@@ -18,7 +18,7 @@ def crear_categorias_iniciales():
     db.session.commit()
 
 def crear_estados_iniciales():
-    estados = ['Disponible', 'En progreso', 'Entregado', 'Cancelado']
+    estados = ['Disponible', 'A evaluar', 'En progreso', 'Entregado', 'Cancelado']
     for nombre in estados:
         if not EstadoPublicacion.query.filter_by(nombreEP=nombre).first():
             db.session.add(EstadoPublicacion(nombreEP=nombre))

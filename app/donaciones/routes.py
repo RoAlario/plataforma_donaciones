@@ -29,6 +29,8 @@ def home():
     if not usuario_id:
         return redirect(url_for('auth.login'))
 
+    from app.models import Campana, EstadoCampana
+
     usuario = Usuario.query.get(usuario_id)
     categorias = Categoria.query.filter_by(fechaBajaCategoria=None).all()
 
@@ -52,10 +54,25 @@ def home():
     for p in publicaciones:
         p.tiempo = tiempo_transcurrido(p.fechaEmisionPublicacion)
 
+    #  Campañas activas
+    campanas_query = Campana.query.filter_by(estado=EstadoCampana.ACTIVA)
+    if busqueda:
+        campanas_query = campanas_query.filter(
+            Campana.titulo.ilike(f'%{busqueda}%') |
+            Campana.descripcion.ilike(f'%{busqueda}%')
+        )
+    if categoria_id:
+        campanas_query = campanas_query.filter_by(codCategoria=categoria_id)
+
+    campanas = campanas_query.order_by(Campana.fechaInicio.desc()).all()
+    for c in campanas:
+        c.tiempo = tiempo_transcurrido(c.fechaInicio)
+
     return render_template('donaciones/home.html',
         usuario=usuario,
         categorias=categorias,
         publicaciones=publicaciones,
+        campanas=campanas,
         busqueda=busqueda,
         categoria_seleccionada=categoria_id
     )
@@ -159,6 +176,7 @@ def publicar():
             talle=request.form.get('talle', ''),
             color=request.form.get('color', ''),
             material=request.form.get('material', ''),
+            conservacion=request.form.get('conservacion', ''),
            )
         
         db.session.add(nueva_pub)
@@ -189,7 +207,7 @@ def detalle(id):
     print(f"Usuario logueado ID: {session.get('usuario_id')}")
     print(f"----------------------")
     
-    donaciones_realizadas = Publicacion.query.filter_by(codUsuario=donante.codUsuario).count()
+    donaciones_realizadas = Publicacion.query.filter_by(codUsuario=donante.codUsuario).count() if donante else 0
 
     return render_template('donaciones/detalle.html',
         p=publicacion,
@@ -307,6 +325,10 @@ def aceptar_solicitud(id):
     publicacion = Publicacion.query.get(solicitud.publicacion_id)
     usuario = Usuario.query.get(session['usuario_id'])
 
+    if solicitud.estado != EstadoSolicitudDonacion.PENDIENTE:
+        flash('Esta solicitud ya fue procesada anteriormente.', 'error')
+        return redirect(url_for('donaciones.mis_donaciones'))
+    
     # Solo el donante puede aceptar
     if publicacion.codUsuario != usuario.codUsuario:
         flash('No tenés permisos para esta acción.', 'error')
@@ -551,12 +573,16 @@ def generar_codigo_transaccion():
     return f'{nums[0]}-{nums[1]}-{nums[2]}'
 
 @donaciones_bp.route('/coordinacion/<int:id>')
+@login_requerido
 def coordinacion(id):
     usuario_id = session.get('usuario_id')
-    if not usuario_id:
-        return redirect(url_for('auth.login'))
     transaccion = Transaccion.query.get_or_404(id)
     usuario = Usuario.query.get(usuario_id)
+
+    if transaccion.codDonante != usuario_id and transaccion.codBeneficiario != usuario_id:
+        flash('No tenés permisos para ver esta página.', 'error')
+        return redirect(url_for('donaciones.home'))
+
     es_donante = transaccion.codDonante == usuario_id
     return render_template('donaciones/coordinacion.html',
         transaccion=transaccion, usuario=usuario, es_donante=es_donante,
@@ -566,11 +592,15 @@ def coordinacion(id):
     )
 
 @donaciones_bp.route('/coordinacion/<int:id>/verificar', methods=['POST'])
+@login_requerido
 def verificar_codigo(id):
     usuario_id = session.get('usuario_id')
-    if not usuario_id:
-        return redirect(url_for('auth.login'))
     transaccion = Transaccion.query.get_or_404(id)
+
+    if transaccion.codBeneficiario != usuario_id:
+        flash('No tenés permisos para esta acción.', 'error')
+        return redirect(url_for('donaciones.home'))
+
     codigo_ingresado = request.form.get('codigo', '').strip()
     if datetime.utcnow() > transaccion.fechaExpiracion:
         _expirar_transaccion(transaccion)
@@ -585,11 +615,15 @@ def verificar_codigo(id):
         return redirect(url_for('donaciones.coordinacion', id=id))
 
 @donaciones_bp.route('/coordinacion/<int:id>/fecha', methods=['POST'])
+@login_requerido
 def confirmar_fecha(id):
     usuario_id = session.get('usuario_id')
-    if not usuario_id:
-        return redirect(url_for('auth.login'))
     transaccion = Transaccion.query.get_or_404(id)
+
+    if transaccion.codDonante != usuario_id and transaccion.codBeneficiario != usuario_id:
+        flash('No tenés permisos para esta acción.', 'error')
+        return redirect(url_for('donaciones.home'))
+
     fecha_str = request.form.get('fecha_entrega', '')
     if not fecha_str:
         flash('Debés seleccionar una fecha de entrega.', 'error')
@@ -621,4 +655,6 @@ def _expirar_transaccion(transaccion):
             mail.send(msg)
     except Exception as e:
         print(f'[MAIL ERROR] {e}')
+
+    db.session.commit()
 

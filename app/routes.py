@@ -25,8 +25,21 @@ def solicitar_campana():
                 peticion_pendiente=True,
             )
 
-        cuitoCuil     = request.form['cuitoCuil']
-        razonPeticion = request.form['razonPeticion']
+        cuitoCuil     = request.form.get('cuitoCuil', '').strip()
+        razonPeticion = request.form.get('razonPeticion', '').strip()
+        
+
+        # Validación CUIT
+        cuitoCuil_limpio = cuitoCuil.replace('-', '')
+        if not cuitoCuil_limpio.isdigit() or len(cuitoCuil_limpio) != 11:
+            return render_template('campana/solicitar_campana.html',
+                                    usuario=usuario,
+                                    error='El CUIT debe tener 11 dígitos (formato: XX-XXXXXXXX-X).')
+        
+        if not razonPeticion or len(razonPeticion) < 10:
+            return render_template('campana/solicitar_campana.html', 
+                                    usuario=usuario,
+                                    error='La razón debe tener al menos 10 caracteres.')
         ultimo_nro = db.session.query(db.func.max(Peticion.nroPeticion)).scalar()
         nuevo_nro  = (ultimo_nro or 0) + 1
 
@@ -74,6 +87,11 @@ def gestionar_campanas():
 def aceptar_peticion(id):
     peticion = Peticion.query.get_or_404(id)
     solicitante = Usuario.query.get(peticion.usuario_id)
+
+    #Validación de estado de la petición  
+    if peticion.estado != EstadoPeticion.PENDIENTE:
+        flash('Esta petición ya fue procesada.', 'error')
+        return redirect(url_for('campana.gestionar_campanas'))
 
     # Actualizar estado y habilitar campañas
     peticion.estado = EstadoPeticion.ACEPTADA
