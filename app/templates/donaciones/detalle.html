@@ -12,7 +12,7 @@
       --naranja:       #f27036;
       --naranja-hover: #a63b00;
       --naranja-light: #f2e0c8;
-      --texto:         #121c2a;
+      --texto:         #121c2a; 
       --texto-suave:   #584239;
       --borde:         #dfc0b4;
     }
@@ -149,7 +149,7 @@
 {% set no_disponible = p.estado and p.estado.nombreEP != 'Disponible' %}
 
 {% if es_propio %}
-  <a href="{{ url_for('donaciones.solicitudes_recibidas') }}"
+  <a href="{{ url_for('donaciones.evaluar_solicitudes', id=p.nroPublicacion) }}"
      class="btn w-100 py-3 fw-bold rounded-3 text-white text-decoration-none"
      style="background:#f27036;">
     <span class="material-symbols-outlined align-middle me-1">inbox</span>

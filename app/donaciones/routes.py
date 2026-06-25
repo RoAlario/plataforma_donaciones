@@ -3,9 +3,10 @@ from flask_mail import Message
 from flask import jsonify
 from app.extensions import db, mail
 from app.models import (Publicacion, Categoria, Usuario, EstadoPublicacion, Direccion,
-                         SolicitudDonacion, EstadoSolicitudDonacion, Notificacion)
+                         SolicitudDonacion, EstadoSolicitudDonacion, Notificacion, Transaccion, EstadoTransaccion)
 from app.auth.routes import login_requerido
-from datetime import datetime
+from datetime import datetime, timedelta
+import random
 
 donaciones_bp = Blueprint('donaciones', __name__)
 
@@ -27,6 +28,8 @@ def home():
     usuario_id = session.get('usuario_id')
     if not usuario_id:
         return redirect(url_for('auth.login'))
+
+    from app.models import Campana, EstadoCampana
 
     usuario = Usuario.query.get(usuario_id)
     categorias = Categoria.query.filter_by(fechaBajaCategoria=None).all()
@@ -51,10 +54,25 @@ def home():
     for p in publicaciones:
         p.tiempo = tiempo_transcurrido(p.fechaEmisionPublicacion)
 
+    #  Campañas activas
+    campanas_query = Campana.query.filter_by(estado=EstadoCampana.ACTIVA)
+    if busqueda:
+        campanas_query = campanas_query.filter(
+            Campana.titulo.ilike(f'%{busqueda}%') |
+            Campana.descripcion.ilike(f'%{busqueda}%')
+        )
+    if categoria_id:
+        campanas_query = campanas_query.filter_by(codCategoria=categoria_id)
+
+    campanas = campanas_query.order_by(Campana.fechaInicio.desc()).all()
+    for c in campanas:
+        c.tiempo = tiempo_transcurrido(c.fechaInicio)
+
     return render_template('donaciones/home.html',
         usuario=usuario,
         categorias=categorias,
         publicaciones=publicaciones,
+        campanas=campanas,
         busqueda=busqueda,
         categoria_seleccionada=categoria_id
     )
@@ -158,6 +176,7 @@ def publicar():
             talle=request.form.get('talle', ''),
             color=request.form.get('color', ''),
             material=request.form.get('material', ''),
+            conservacion=request.form.get('conservacion', ''),
            )
         
         db.session.add(nueva_pub)
@@ -188,7 +207,7 @@ def detalle(id):
     print(f"Usuario logueado ID: {session.get('usuario_id')}")
     print(f"----------------------")
     
-    donaciones_realizadas = Publicacion.query.filter_by(codUsuario=donante.codUsuario).count()
+    donaciones_realizadas = Publicacion.query.filter_by(codUsuario=donante.codUsuario).count() if donante else 0
 
     return render_template('donaciones/detalle.html',
         p=publicacion,
@@ -197,9 +216,7 @@ def detalle(id):
         donaciones_realizadas=donaciones_realizadas,
         tiempo=tiempo_transcurrido(publicacion.fechaEmisionPublicacion)
     )
-    
-    
-   
+
 # --- Solicitar donación ---
 @donaciones_bp.route('/donacion/<int:id>/solicitar', methods=['GET', 'POST'])
 @login_requerido
@@ -308,6 +325,10 @@ def aceptar_solicitud(id):
     publicacion = Publicacion.query.get(solicitud.publicacion_id)
     usuario = Usuario.query.get(session['usuario_id'])
 
+    if solicitud.estado != EstadoSolicitudDonacion.PENDIENTE:
+        flash('Esta solicitud ya fue procesada anteriormente.', 'error')
+        return redirect(url_for('donaciones.mis_donaciones'))
+    
     # Solo el donante puede aceptar
     if publicacion.codUsuario != usuario.codUsuario:
         flash('No tenés permisos para esta acción.', 'error')
@@ -345,6 +366,16 @@ def aceptar_solicitud(id):
         )
         db.session.add(notif_rechazada)
 
+    codigo = generar_codigo_transaccion()
+    nueva_transaccion = Transaccion(
+        codigoVerif=codigo,
+        fechaExpiracion=datetime.utcnow() + timedelta(hours=24),
+        codPublicacion=publicacion.nroPublicacion,
+        codDonante=usuario.codUsuario,
+        codBeneficiario=solicitante.codUsuario
+    )
+    db.session.add(nueva_transaccion) 
+    db.session.flush()  # Asegura que se genere un ID para la transacción
     db.session.commit()
 
     # Email
@@ -364,8 +395,8 @@ def aceptar_solicitud(id):
         print(f'[MAIL ERROR] {e}')
 
     flash('Solicitud aceptada. La donación pasó a "En progreso".', 'success')
-    return redirect(url_for('donaciones.solicitudes_recibidas'))
-
+    print(f'[DEBUG] idTransaccion: {nueva_transaccion.idTransaccion}')
+    return redirect(url_for('donaciones.coordinacion', id=nueva_transaccion.idTransaccion))
 
 # --- Rechazar solicitud ---
 @donaciones_bp.route('/solicitud/<int:id>/rechazar', methods=['POST'])
@@ -414,7 +445,6 @@ def rechazar_solicitud(id):
 
     flash('Solicitud rechazada.', 'error')
     return redirect(url_for('donaciones.solicitudes_recibidas'))
-
 
 # --- Notificaciones ---
 @donaciones_bp.route('/notificaciones')
@@ -515,3 +545,216 @@ def mis_solicitudes():
     return render_template('donaciones/mis_solicitudes.html',
                            usuario=usuario,
                            solicitudes=solicitudes)
+# --- Evaluar solicitudes (US-08) ---
+@donaciones_bp.route('/donacion/<int:id>/solicitudes')
+@login_requerido
+def evaluar_solicitudes(id):
+    usuario = Usuario.query.get(session['usuario_id'])
+    publicacion = Publicacion.query.get_or_404(id)
+
+    if publicacion.codUsuario != usuario.codUsuario:
+        flash('No tenés permisos para ver esto.', 'error')
+        return redirect(url_for('donaciones.home'))
+
+    # ✅ Asegurate que filtra por publicacion_id no por codUsuario
+    solicitudes = SolicitudDonacion.query.filter_by(
+        publicacion_id=id
+    ).order_by(SolicitudDonacion.fechaSolicitud.asc()).all()
+
+    return render_template('donaciones/mis_donaciones_solicitudes.html',
+        usuario=usuario,
+        publicacion=publicacion,
+        solicitudes=solicitudes,
+        tiempo=tiempo_transcurrido(publicacion.fechaEmisionPublicacion)
+    )
+
+def generar_codigo_transaccion():
+    nums = [random.randint(100, 999) for _ in range(3)]
+    return f'{nums[0]}-{nums[1]}-{nums[2]}'
+
+@donaciones_bp.route('/coordinacion/<int:id>')
+@login_requerido
+def coordinacion(id):
+    usuario_id = session.get('usuario_id')
+    transaccion = Transaccion.query.get_or_404(id)
+    usuario = Usuario.query.get(usuario_id)
+
+    if transaccion.codDonante != usuario_id and transaccion.codBeneficiario != usuario_id:
+        flash('No tenés permisos para ver esta página.', 'error')
+        return redirect(url_for('donaciones.home'))
+
+    es_donante = transaccion.codDonante == usuario_id
+    return render_template('donaciones/coordinacion.html',
+        transaccion=transaccion, usuario=usuario, es_donante=es_donante,
+        publicacion=transaccion.publicacion, donante=transaccion.donante,
+        beneficiario=transaccion.beneficiario,
+        tiempo=tiempo_transcurrido(transaccion.publicacion.fechaEmisionPublicacion)
+    )
+
+@donaciones_bp.route('/coordinacion/<int:id>/verificar', methods=['POST'])
+@login_requerido
+def verificar_codigo(id):
+    usuario_id = session.get('usuario_id')
+    transaccion = Transaccion.query.get_or_404(id)
+
+    if transaccion.codBeneficiario != usuario_id:
+        flash('No tenés permisos para esta acción.', 'error')
+        return redirect(url_for('donaciones.home'))
+
+    codigo_ingresado = request.form.get('codigo', '').strip()
+    if datetime.utcnow() > transaccion.fechaExpiracion:
+        _expirar_transaccion(transaccion)
+        flash('El código expiró. La donación volvió a estar disponible.', 'error')
+        return redirect(url_for('donaciones.home'))
+    if codigo_ingresado == transaccion.codigoVerif:
+        transaccion.estado = EstadoTransaccion.VERIFICADA
+        db.session.commit()
+        return redirect(url_for('donaciones.coordinacion', id=id))
+    else:
+        flash('Código incorrecto. Intentá de nuevo.', 'error')
+        return redirect(url_for('donaciones.coordinacion', id=id))
+
+@donaciones_bp.route('/coordinacion/<int:id>/fecha', methods=['POST'])
+@login_requerido
+def confirmar_fecha(id):
+    usuario_id = session.get('usuario_id')
+    transaccion = Transaccion.query.get_or_404(id)
+
+    if transaccion.codDonante != usuario_id and transaccion.codBeneficiario != usuario_id:
+        flash('No tenés permisos para esta acción.', 'error')
+        return redirect(url_for('donaciones.home'))
+
+    fecha_str = request.form.get('fecha_entrega', '')
+    if not fecha_str:
+        flash('Debés seleccionar una fecha de entrega.', 'error')
+        return redirect(url_for('donaciones.coordinacion', id=id))
+    transaccion.fechaEntrega = datetime.strptime(fecha_str, '%Y-%m-%d')
+    db.session.commit()
+    flash('¡Fecha de entrega confirmada!', 'success')
+    return redirect(url_for('donaciones.coordinacion', id=id))
+
+def _expirar_transaccion(transaccion):
+    transaccion.estado = EstadoTransaccion.EXPIRADA
+    publicacion = transaccion.publicacion
+    estado_disponible = EstadoPublicacion.query.filter_by(nombreEP='Disponible').first()
+    publicacion.codEstadoPublicacion = estado_disponible.codEstadoPublicacion
+    db.session.commit()
+    try:
+        for destinatario in [transaccion.donante, transaccion.beneficiario]:
+            msg = Message(
+                subject='Solicitud de donación expirada',
+                sender=current_app.config['MAIL_USERNAME'],
+                recipients=[destinatario.email]
+            )
+            msg.body = (
+                f'Hola {destinatario.nombre},\n\n'
+                f'La solicitud de donación "{publicacion.titulo}" expiró '
+                f'porque no se verificó el código en 24 horas.\n'
+                f'La donación volvió a estar disponible para otros usuarios.'
+            )
+            mail.send(msg)
+    except Exception as e:
+        print(f'[MAIL ERROR] {e}')
+
+    db.session.commit()
+
+@donaciones_bp.route('/coordinacion/<int:id>/verificar-entrega', methods=['POST'])
+@login_requerido
+def verificar_entrega(id):
+    usuario_id = session.get('usuario_id')
+    transaccion = Transaccion.query.get_or_404(id)
+
+    # Solo el donante puede verificar la entrega
+    if transaccion.codDonante != usuario_id:
+        flash('No tenés permisos para esta acción.', 'error')
+        return redirect(url_for('donaciones.home'))
+
+    codigo_ingresado = request.form.get('codigo_entrega', '').strip()
+
+    if codigo_ingresado != transaccion.codigoEntrega:
+        flash('Código de entrega incorrecto.', 'error')
+        return redirect(url_for('donaciones.coordinacion', id=id))
+
+    #  Finalizar la donación
+    publicacion = transaccion.publicacion
+    estado_finalizado = EstadoPublicacion.query.filter_by(nombreEP='Finalizado').first()
+    if estado_finalizado:
+        publicacion.codEstadoPublicacion = estado_finalizado.codEstadoPublicacion
+
+    transaccion.estado = EstadoTransaccion.FINALIZADA
+
+    # Actualizar contadores
+    donante = transaccion.donante
+    beneficiario = transaccion.beneficiario
+    donante.cantDonaciones = (donante.cantDonaciones or 0) + 1
+    db.session.commit()
+
+    # Notificaciones
+    notif_donante = Notificacion(
+        mensaje=f'¡Tu donación "{publicacion.titulo}" fue entregada con éxito!',
+        usuario_id=donante.codUsuario,
+        enlace=url_for('donaciones.coordinacion', id=id)
+    )
+    notif_beneficiario = Notificacion(
+        mensaje=f'¡Recibiste la donación "{publicacion.titulo}" con éxito!',
+        usuario_id=beneficiario.codUsuario,
+        enlace=url_for('donaciones.coordinacion', id=id)
+    )
+    db.session.add(notif_donante)
+    db.session.add(notif_beneficiario)
+    db.session.commit()
+
+    # Emails
+    try:
+        for dest in [donante, beneficiario]:
+            msg = Message(
+                subject=f'Donación "{publicacion.titulo}" finalizada',
+                sender=current_app.config['MAIL_USERNAME'],
+                recipients=[dest.email]
+            )
+            msg.body = (
+                f'Hola {dest.nombre},\n\n'
+                f'La donación "{publicacion.titulo}" fue completada exitosamente.\n'
+                f'¡Gracias por ser parte de la comunidad!'
+            )
+            mail.send(msg)
+    except Exception as e:
+        print(f'[MAIL ERROR] {e}')
+
+    flash('¡Donación finalizada con éxito!', 'success')
+    return redirect(url_for('donaciones.coordinacion', id=id))
+
+@donaciones_bp.route('/coordinacion/<int:id>/generar-codigo-entrega', methods=['POST'])
+@login_requerido
+def generar_codigo_entrega(id):
+    usuario_id = session.get('usuario_id')
+    transaccion = Transaccion.query.get_or_404(id)
+
+    # Solo el beneficiario puede solicitar el código
+    if transaccion.codBeneficiario != usuario_id:
+        flash('No tenés permisos para esta acción.', 'error')
+        return redirect(url_for('donaciones.home'))
+
+    codigo = generar_codigo_transaccion()
+    transaccion.codigoEntrega = codigo
+    db.session.commit()
+
+    # Enviar código al beneficiario por email
+    try:
+        msg = Message(
+            subject='Código de verificación de entrega',
+            sender=current_app.config['MAIL_USERNAME'],
+            recipients=[transaccion.beneficiario.email]
+        )
+        msg.body = (
+            f'Hola {transaccion.beneficiario.nombre},\n\n'
+            f'Tu código de verificación de entrega es: {codigo}\n\n'
+            f'Entregáselo al donante para confirmar la recepción.'
+        )
+        mail.send(msg)
+    except Exception as e:
+        print(f'[MAIL ERROR] {e}')
+
+    flash('Código de entrega generado y enviado a tu email.', 'success')
+    return redirect(url_for('donaciones.coordinacion', id=id))
+

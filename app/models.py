@@ -68,6 +68,9 @@ class Publicacion(db.Model):
     fechaVencimiento = db.Column(db.DateTime, nullable=True)
     receta           = db.Column(db.Boolean,  nullable=True)
     marca = db.Column(db.String(20), nullable=True)
+    conservacion = db.Column(db.String(30), nullable=True)
+
+    donante = db.relationship('Usuario', foreign_keys=[codUsuario], backref='publicaciones')
 
 class EstadoPublicacion(db.Model):
     __tablename__ = 'estado_publicacion'
@@ -94,7 +97,6 @@ class SolicitudDonacion(db.Model):
 
     publicacion = db.relationship('Publicacion', backref='solicitudes')
     usuario     = db.relationship('Usuario', backref='solicitudes_donacion')
-
 
 class Direccion(db.Model):
     __tablename__ = 'direccion'
@@ -160,3 +162,32 @@ class Notificacion(db.Model):
     enlace        = db.Column(db.String(200), nullable=True)
 
     usuario = db.relationship('Usuario', backref='notificaciones')
+
+#Clases para la gestión de transacciones
+class EstadoTransaccion(enum.Enum):
+    PENDIENTE  = 'Pendiente'
+    VERIFICADA = 'Verificada'
+    FINALIZADA = 'Finalizada'
+    EXPIRADA   = 'Expirada'
+    CANCELADA  = 'Cancelada'
+
+class Transaccion(db.Model):
+    __tablename__ = 'transaccion'
+    idTransaccion      = db.Column(db.Integer, primary_key=True)
+    codigoVerif        = db.Column(db.String(11), nullable=False)
+    codigoEntrega      = db.Column(db.String(11), nullable=True)
+    fechaCreacion      = db.Column(db.DateTime, default=datetime.utcnow)
+    fechaExpiracion    = db.Column(db.DateTime, nullable=False)
+    fechaEntrega       = db.Column(db.DateTime, nullable=True)
+    estado             = db.Column(db.Enum(EstadoTransaccion), default=EstadoTransaccion.PENDIENTE)
+    codPublicacion  = db.Column(db.Integer, db.ForeignKey('publicacion.nroPublicacion'), nullable=False)
+    codDonante      = db.Column(db.Integer, db.ForeignKey('usuario.codUsuario'), nullable=False)
+    codBeneficiario = db.Column(db.Integer, db.ForeignKey('usuario.codUsuario'), nullable=False)
+    
+    publicacion  = db.relationship('Publicacion', backref='transacciones',overlaps='solicitudes')
+    donante      = db.relationship('Usuario', foreign_keys=[codDonante],backref='transacciones_donante')
+    beneficiario = db.relationship('Usuario', foreign_keys=[codBeneficiario],backref='transacciones_beneficiario')
+
+    def __repr__(self):
+        return f'<Transaccion {self.idTransaccion} - {self.estado}>'
+    

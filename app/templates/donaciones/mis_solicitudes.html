@@ -36,13 +36,25 @@
           <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
               <a href="{{ url_for('donaciones.detalle', id=s.publicacion.nroPublicacion) }}" class="fw-bold text-decoration-none" style="color:var(--texto);">{{ s.publicacion.titulo }}</a>
-              <p class="text-muted mb-0" style="font-size:13px;">Donante: {{ s.publicacion.usuario.nombre }}</p>
+              <p class="text-muted mb-0" style="font-size:13px;">Donante: {{ s.publicacion.donante.nombre }}</p>
             </div>
             <span class="badge rounded-pill badge-{{ s.estado.value|lower }}">{{ s.estado.value }}</span>
           </div>
           <p class="mb-2" style="font-size:13px; color:var(--texto-suave);">{{ s.razon }}</p>
           <p class="text-muted mb-0" style="font-size:12px;">Enviada: {{ s.fechaSolicitud.strftime('%d/%m/%Y %H:%M') }}</p>
-        </div>
+
+{% if s.estado.value == 'Aceptada' %}
+  {% set transaccion = s.publicacion.transacciones | selectattr('codBeneficiario', 'equalto', usuario.codUsuario) | first %}
+  {% if transaccion %}
+    <a href="{{ url_for('donaciones.coordinacion', id=transaccion.idTransaccion) }}"
+       class="btn mt-3 w-100 fw-semibold rounded-3 text-white"
+       style="background: var(--naranja);">
+      <span class="material-symbols-outlined align-middle me-1" style="font-size:16px;">open_in_new</span>
+      Ver coordinación
+    </a>
+  {% endif %}
+{% endif %}
+</div>
       {% endfor %}
     {% else %}
       <div class="text-center py-5 text-muted">

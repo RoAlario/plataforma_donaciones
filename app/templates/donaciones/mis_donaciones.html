@@ -49,6 +49,13 @@
           <div class="col">
             {% if p.estado and p.estado.nombreEP == 'A evaluar' %}
               <a href="{{ url_for('donaciones.mis_donaciones_solicitudes', id=p.nroPublicacion) }}" class="dona-card h-100">
+            {% elif p.estado and p.estado.nombreEP == 'En progreso' %}
+            {% set transaccion = p.transacciones | selectattr('estado.value', 'in', ['Pendiente', 'Verificada']) | first %}
+            {% if transaccion %}
+              <a href="{{ url_for('donaciones.coordinacion', id=transaccion.idTransaccion) }}" class="dona-card h-100">
+            {% else %}
+              <a href="{{ url_for('donaciones.detalle', id=p.nroPublicacion) }}" class="dona-card h-100">
+            {% endif %}
             {% else %}
               <a href="{{ url_for('donaciones.detalle', id=p.nroPublicacion) }}" class="dona-card h-100">
             {% endif %}
