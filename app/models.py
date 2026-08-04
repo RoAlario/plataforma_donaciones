@@ -18,7 +18,7 @@ class Usuario(db.Model):
     codUsuario          = db.Column(db.Integer, primary_key=True)
     nombre              = db.Column(db.String(50),  nullable=False)
     email               = db.Column(db.String(100), nullable=False, unique=True)
-    telefono            = db.Column(db.String(14),  nullable=False)
+    telefono            = db.Column(db.String(14),  nullable=False, unique=True)
     ubicacion           = db.Column(db.String(100), nullable=True)
     contrasena          = db.Column(db.String(200), nullable=False)
     fechaAltaUsuario    = db.Column(db.DateTime, default=datetime.utcnow)
@@ -141,6 +141,7 @@ class Campana(db.Model):
     fechaFinalizacion   = db.Column(db.DateTime, nullable=False)
     foto                = db.Column(db.String(255), nullable=True)
     cantidadNecesaria   = db.Column(db.Integer, nullable=False)
+    cantidadDonada      = db.Column(db.Integer, default=0)
     estado              = db.Column(db.Enum(EstadoCampana), default=EstadoCampana.ACTIVA)
 
     codCategoria = db.Column(db.Integer, db.ForeignKey('categoria.codCategoria'), nullable=False)
@@ -148,6 +149,9 @@ class Campana(db.Model):
 
     categoria = db.relationship('Categoria', backref='campanas')
     usuario   = db.relationship('Usuario', backref='campanas')
+
+    def unidades_restantes(self):
+        return max(0, self.cantidadNecesaria - (self.cantidadDonada or 0))
 
     def __repr__(self):
         return f'<Campana {self.titulo}>'   
@@ -180,7 +184,7 @@ class Transaccion(db.Model):
     fechaExpiracion    = db.Column(db.DateTime, nullable=False)
     fechaEntrega       = db.Column(db.DateTime, nullable=True)
     estado             = db.Column(db.Enum(EstadoTransaccion), default=EstadoTransaccion.PENDIENTE)
-    codPublicacion  = db.Column(db.Integer, db.ForeignKey('publicacion.nroPublicacion'), nullable=False)
+    codPublicacion  = db.Column(db.Integer, db.ForeignKey('publicacion.nroPublicacion'), nullable=True)
     codDonante      = db.Column(db.Integer, db.ForeignKey('usuario.codUsuario'), nullable=False)
     codBeneficiario = db.Column(db.Integer, db.ForeignKey('usuario.codUsuario'), nullable=False)
     
@@ -188,6 +192,26 @@ class Transaccion(db.Model):
     donante      = db.relationship('Usuario', foreign_keys=[codDonante],backref='transacciones_donante')
     beneficiario = db.relationship('Usuario', foreign_keys=[codBeneficiario],backref='transacciones_beneficiario')
 
+    campana_id = db.Column(db.Integer, db.ForeignKey('campana.idCampana'), nullable=True)
+    campana    = db.relationship('Campana', backref='transacciones')
+
     def __repr__(self):
         return f'<Transaccion {self.idTransaccion} - {self.estado}>'
-    
+
+
+class OfertaCampana(db.Model):
+    __tablename__ = 'oferta_campana'
+
+    id                  = db.Column(db.Integer, primary_key=True)
+    cantidad_ofrecida   = db.Column(db.Integer, nullable=False)
+    fecha_oferta        = db.Column(db.DateTime, default=datetime.utcnow)
+    campana_id          = db.Column(db.Integer, db.ForeignKey('campana.idCampana'), nullable=False)
+    usuario_id          = db.Column(db.Integer, db.ForeignKey('usuario.codUsuario'), nullable=False)
+    transaccion_id      = db.Column(db.Integer, db.ForeignKey('transaccion.idTransaccion'), nullable=True)
+
+    campana      = db.relationship('Campana', backref='ofertas')
+    usuario      = db.relationship('Usuario', backref='ofertas_campana')
+    transaccion  = db.relationship('Transaccion', backref='oferta_campana', uselist=False)
+
+    def __repr__(self):
+        return f'<OfertaCampana {self.id} - {self.cantidad_ofrecida} unidades>'

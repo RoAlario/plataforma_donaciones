@@ -56,6 +56,8 @@ def registro():
             errores['email'] = 'El correo electrónico ingresado ya se encuentra vinculado a una cuenta activa.'
         if not telefono or not es_telefono_valido(telefono):
             errores['telefono'] = 'El teléfono debe tener entre 7 y 14 dígitos.'
+        elif Usuario.query.filter_by(telefono=telefono).first():
+            errores['telefono'] = 'El número de teléfono ingresado ya se encuentra vinculado a una cuenta activa.'
         if not ubicacion:
             errores['ubicacion'] = 'La ubicación es obligatoria.'
         if not contra or len(contra) < 6:
@@ -120,7 +122,7 @@ def verificar():
             db.session.add(nuevo)
             db.session.commit()
             session.pop('registro_pendiente', None)
-            flash('¡Cuenta creada con éxito! Ya podés iniciar sesión.', 'success')
+            flash('¡Bienvenido/a!', 'success')
             return redirect(url_for('auth.login'))
         else:
             error = 'El código ingresado no es correcto. Revisá tu email.'
@@ -152,7 +154,6 @@ def login():
             error = 'Email o contraseña incorrectos.'
         else:
             session['usuario_id'] = usuario.codUsuario
-            flash('¡Bienvenido/a!', 'success')
             if usuario.es_admin():
                 return redirect(url_for('admin.home'))
             return redirect(url_for('donaciones.home'))

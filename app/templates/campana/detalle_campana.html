@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ campana.titulo }} - Campaña</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --naranja: #f27036; --naranja-hover: #a63b00;
+      --naranja-light: #f2e0c8; --texto: #121c2a;
+      --texto-suave: #584239; --borde: #dfc0b4;
+      --verde: #006a61;
+    }
+    body { font-family: 'Inter', sans-serif; background: #f8f9ff; color: var(--texto); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .navbar-custom { background: var(--naranja-light); border-bottom: 1px solid var(--borde); }
+    .card-custom { background: #fff; border-radius: 16px; border: none; box-shadow: 0 1px 6px rgba(0,0,0,0.07); }
+    .btn-volver {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 14px; color: var(--texto-suave); text-decoration: none;
+    }
+    .btn-volver:hover { color: var(--naranja-hover); }
+    .foto-principal { width: 100%; height: 320px; object-fit: cover; border-radius: 16px; }
+    .foto-placeholder { width: 100%; height: 320px; background: #e6eeff; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 72px; }
+    .meta-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--texto-suave); }
+    .meta-item .material-symbols-outlined { font-size: 20px; color: var(--naranja-hover); }
+    .avatar-creador { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--verde); object-fit: cover; }
+    .avatar-creador-placeholder {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: var(--verde); color: #fff;
+      font-size: 28px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-ofrecer {
+      width: 100%; padding: 14px; background: var(--verde); color: #fff;
+      border: none; border-radius: 14px; font-weight: 700; font-size: 16px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .2s; cursor: pointer; text-decoration: none;
+    }
+    .btn-ofrecer:hover { background: #004d45; color: #fff; }
+    .progress-bar-custom {
+      height: 12px; border-radius: 6px; background: #e9ecef; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 6px; background: var(--verde);
+      transition: width .4s ease;
+    }
+    .contador-card { border-radius: 12px; padding: 12px; text-align: center; color: #fff; }
+    .contador-num { font-size: 24px; font-weight: 700; }
+    .contador-label { font-size: 11px; margin-top: 2px; }
+    .avatar-circle {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--naranja);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="navbar-custom sticky-top shadow-sm">
+    <div class="container-xl px-3 px-md-5 py-3 d-flex align-items-center gap-3">
+      <a href="{{ url_for('donaciones.home') }}">
+        <img src="{{ url_for('static', filename='logo.png') }}" style="height:56px;" alt="Logo">
+      </a>
+      <a href="{{ url_for('donaciones.home') }}" class="ms-auto text-decoration-none d-flex align-items-center gap-1" style="font-size:14px; color:var(--texto-suave);">
+        <span class="material-symbols-outlined" style="font-size:18px;">home</span> Inicio
+      </a>
+    </div>
+  </header>
+
+  <div class="container" style="max-width:960px; padding:32px 16px;">
+    <a href="{{ url_for('donaciones.home') }}" class="btn-volver mb-4 d-inline-flex">
+      <span class="material-symbols-outlined">arrow_back</span> Volver
+    </a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert {{ 'alert-danger' if category == 'error' else 'alert-success' }} rounded-3 mb-3">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="row g-4">
+
+      <!-- Columna principal -->
+      <div class="col-12 col-lg-8">
+
+        <!-- Foto -->
+        <div class="mb-4">
+          {% if campana.foto %}
+            <img src="{{ url_for('static', filename='fotos/' + campana.foto) }}" alt="{{ campana.titulo }}" class="foto-principal">
+          {% else %}
+            <div class="foto-placeholder">📣</div>
+          {% endif %}
+        </div>
+
+        <!-- Info principal -->
+        <div class="card-custom p-4 mb-4">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge" style="background:var(--verde); font-size:12px;">Campaña activa</span>
+            <span class="badge" style="background:#e6eeff; color:var(--verde); font-size:12px;">{{ campana.categoria.nombreCategoria }}</span>
+          </div>
+
+          <h1 class="fw-bold mb-3" style="font-size:22px;">{{ campana.titulo }}</h1>
+
+          <div class="d-flex flex-column gap-2 mb-3">
+            <div class="meta-item">
+              <span class="material-symbols-outlined">location_on</span>
+              <span>{{ campana.ubicacion }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="material-symbols-outlined">event</span>
+              <span>Finaliza: {{ campana.fechaFinalizacion.strftime('%d/%m/%Y') }}</span>
+            </div>
+          </div>
+
+          {% if campana.descripcion %}
+            <div class="border-top pt-3 mt-3">
+              <h3 class="fw-semibold mb-2" style="font-size:14px;">Descripción</h3>
+              <p class="mb-0" style="font-size:14px; color:var(--texto-suave); line-height:1.7;">
+                {{ campana.descripcion }}
+              </p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Progreso -->
+        <div class="card-custom p-4 mb-4">
+          <h2 class="fw-bold mb-3" style="font-size:18px;">Progreso de la campaña</h2>
+          <div class="d-flex justify-content-between mb-2" style="font-size:14px;">
+            <span class="fw-semibold">{{ campana.cantidadDonada or 0 }} donados</span>
+            <span class="text-muted">Meta: {{ campana.cantidadNecesaria }}</span>
+          </div>
+          <div class="progress-bar-custom mb-2">
+            {% set porcentaje = ((campana.cantidadDonada or 0) / campana.cantidadNecesaria * 100) if campana.cantidadNecesaria > 0 else 0 %}
+            <div class="progress-fill" style="width:{{ [porcentaje, 100]|min }}%;"></div>
+          </div>
+          <p class="text-muted mb-0" style="font-size:13px;">
+            {% if campana.unidades_restantes() > 0 %}
+              Faltan <strong>{{ campana.unidades_restantes() }}</strong> unidades por recibir.
+            {% else %}
+              <span class="fw-semibold" style="color:var(--verde);">Campaña completada</span>
+            {% endif %}
+          </p>
+        </div>
+
+        <!-- Botón ofrecer -->
+        {% set es_creador = campana.codUsuario|string == session.get('usuario_id')|string %}
+        {% set completada = campana.unidades_restantes() <= 0 %}
+
+        {% if es_creador %}
+          <a href="{{ url_for('campana.ofertas_recibidas_campana', id=campana.idCampana) }}"
+             class="btn w-100 py-3 fw-bold rounded-3 text-white text-decoration-none"
+             style="background:var(--verde);">
+            <span class="material-symbols-outlined align-middle me-1">inbox</span>
+            Ver ofertas recibidas
+          </a>
+        {% elif completada %}
+          <button class="btn w-100 py-3 fw-bold rounded-3 text-muted" style="background:#e0e0e0;" disabled>
+            Campaña completada
+          </button>
+        {% else %}
+          <a href="{{ url_for('campana.ofrecer_ayuda', id=campana.idCampana) }}"
+             class="btn-ofrecer">
+            <span class="material-symbols-outlined">volunteer_activism</span>
+            Ofrecer ayuda
+          </a>
+        {% endif %}
+      </div>
+
+      <!-- Columna derecha — Info del creador -->
+      <div class="col-12 col-lg-4">
+        <div class="card-custom p-4 sticky-top" style="top:24px;">
+          <div class="d-flex flex-column align-items-center mb-4">
+            {% if creador.foto_perfil %}
+              <img src="{{ url_for('static', filename='fotos/' + creador.foto_perfil) }}" alt="{{ creador.nombre }}" class="avatar-creador mb-3">
+            {% else %}
+              <div class="avatar-creador-placeholder mb-3">{{ creador.nombre[0].upper() }}</div>
+            {% endif %}
+            <h3 class="fw-bold mb-0" style="font-size:16px;">{{ creador.nombre }}</h3>
+            <p class="text-muted mb-0" style="font-size:12px;">Creador de la campaña</p>
+          </div>
+
+          <div class="d-flex flex-column gap-2 mb-4">
+            {% if creador.ubicacion %}
+              <div class="meta-item">
+                <span class="material-symbols-outlined" style="font-size:16px;">location_on</span>
+                <span style="font-size:12px;">{{ creador.ubicacion }}</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="row g-2">
+            <div class="col-6">
+              <div class="contador-card" style="background:var(--verde);">
+                <div class="contador-num">{{ campana.cantidadNecesaria }}</div>
+                <div class="contador-label"> Necesitados</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="contador-card" style="background:var(--naranja);">
+                <div class="contador-num">{{ campana.cantidadDonada or 0 }}</div>
+                <div class="contador-label">Recibidos</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
