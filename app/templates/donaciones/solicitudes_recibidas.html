@@ -14,11 +14,17 @@
     .badge-pendiente { background: #FFF3E8; color: #f27036; }
     .badge-aceptada  { background: #E8F5E9; color: #2E7D32; }
     .badge-rechazada { background: #FFEBEE; color: #C62828; }
+    .btn-volver {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 14px; color: var(--texto-suave); text-decoration: none;
+      transition: color .2s;
+    }
+    .btn-volver:hover { color: var(--naranja-hover); }
   </style>
 </head>
 <body>
   <div class="container py-5" style="max-width:720px;">
-    <a href="{{ url_for('donaciones.home') }}" class="text-decoration-none mb-4 d-inline-flex" style="color:var(--texto-suave); font-size:14px;">
+    <a href="{{ url_for('donaciones.home') }}" class="btn-volver mb-4 d-inline-flex">
       <span class="material-symbols-outlined">arrow_back</span> Volver al inicio
     </a>
 

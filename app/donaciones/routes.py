@@ -5,23 +5,11 @@ from app.extensions import db, mail
 from app.models import (Publicacion, Categoria, Usuario, EstadoPublicacion, Direccion,
                          SolicitudDonacion, EstadoSolicitudDonacion, Notificacion, Transaccion, EstadoTransaccion)
 from app.auth.routes import login_requerido
-from datetime import datetime, timedelta
-import random
+from datetime import datetime, timedelta, timezone
 
 donaciones_bp = Blueprint('donaciones', __name__)
 
-def tiempo_transcurrido(fecha):
-    diff = datetime.utcnow() - fecha
-    minutos = diff.seconds // 60
-    horas = diff.seconds // 3600
-    dias = diff.days
-    if dias > 0:
-        return f'Hace {dias} día{"s" if dias > 1 else ""}'
-    elif horas > 0:
-        return f'Hace {horas} hora{"s" if horas > 1 else ""}'
-    elif minutos > 0:
-        return f'Hace {minutos} minuto{"s" if minutos > 1 else ""}'
-    return 'Hace un momento'
+from app.utils import tiempo_transcurrido
 
 @donaciones_bp.route('/home')
 def home():
@@ -32,6 +20,8 @@ def home():
     from app.models import Campana, EstadoCampana
 
     usuario = Usuario.query.get(usuario_id)
+    if usuario and usuario.es_admin():
+        return redirect(url_for('admin.home'))
     categorias = Categoria.query.filter_by(fechaBajaCategoria=None).all()
 
     busqueda = request.args.get('q', '').strip()
@@ -122,9 +112,13 @@ def publicar():
                 errores['fecha_vencimiento'] = 'La fecha de vencimiento es obligatoria para esta categoría.'
             else:
                 from datetime import date
-                fecha = date.fromisoformat(fecha_venc)
-                if fecha <= date.today():
-                    errores['fecha_vencimiento'] = 'El producto está vencido. No puede publicarse.'
+                try:
+                    fecha = date.fromisoformat(fecha_venc)
+                except ValueError:
+                    errores['fecha_vencimiento'] = 'El formato de la fecha no es válido.'
+                else:
+                    if fecha <= date.today():
+                        errores['fecha_vencimiento'] = 'El producto está vencido. No puede publicarse.'
 
         # Validar conservación para Ropa, Muebles, Electrónico
         if categoria and categoria.nombreCategoria in ['Ropa', 'Muebles', 'Electrónico']:
@@ -146,16 +140,18 @@ def publicar():
         # Foto
         foto_nombre = None
         foto = request.files.get('foto')
-        if foto and foto.filename != '':
-            from werkzeug.utils import secure_filename
-            from flask import current_app
-            import os
-            ext = foto.filename.rsplit('.', 1)[-1].lower()
-            if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
-                foto_nombre = secure_filename(foto.filename)
-                carpeta = current_app.config['UPLOAD_FOLDER']
-                os.makedirs(carpeta, exist_ok=True)
-                foto.save(os.path.join(carpeta, foto_nombre))
+        if foto and foto.filename:
+            foto_filename = foto.filename or ''
+            if foto_filename != '':
+                from werkzeug.utils import secure_filename
+                from flask import current_app
+                import os
+                ext = foto_filename.rsplit('.', 1)[-1].lower()
+                if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
+                    foto_nombre = secure_filename(foto_filename)
+                    carpeta = current_app.config['UPLOAD_FOLDER']
+                    os.makedirs(carpeta, exist_ok=True)
+                    foto.save(os.path.join(carpeta, foto_nombre))
 
         # Estado "Disponible"
         estado = EstadoPublicacion.query.filter_by(nombreEP='Disponible').first()
@@ -369,7 +365,7 @@ def aceptar_solicitud(id):
     codigo = generar_codigo_transaccion()
     nueva_transaccion = Transaccion(
         codigoVerif=codigo,
-        fechaExpiracion=datetime.utcnow() + timedelta(hours=24),
+        fechaExpiracion=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=24),
         codPublicacion=publicacion.nroPublicacion,
         codDonante=usuario.codUsuario,
         codBeneficiario=solicitante.codUsuario
@@ -410,6 +406,10 @@ def rechazar_solicitud(id):
         flash('No tenés permisos para esta acción.', 'error')
         return redirect(url_for('donaciones.home'))
 
+    if solicitud.estado != EstadoSolicitudDonacion.PENDIENTE:
+        flash('Esta solicitud ya fue procesada.', 'error')
+        return redirect(url_for('donaciones.mis_donaciones'))
+
     motivo = request.form.get('motivo', '').strip()
     if len(motivo) < 10:
         flash('El motivo debe tener al menos 10 caracteres.', 'error')
@@ -443,7 +443,7 @@ def rechazar_solicitud(id):
     except Exception as e:
         print(f'[MAIL ERROR] {e}')
 
-    flash('Solicitud rechazada.', 'error')
+    flash('Solicitud rechazada.', 'success')
     return redirect(url_for('donaciones.solicitudes_recibidas'))
 
 # --- Notificaciones ---
@@ -570,9 +570,7 @@ def evaluar_solicitudes(id):
         tiempo=tiempo_transcurrido(publicacion.fechaEmisionPublicacion)
     )
 
-def generar_codigo_transaccion():
-    nums = [random.randint(100, 999) for _ in range(3)]
-    return f'{nums[0]}-{nums[1]}-{nums[2]}'
+from app.utils import generar_codigo_transaccion
 
 @donaciones_bp.route('/coordinacion/<int:id>')
 @login_requerido
@@ -604,7 +602,7 @@ def verificar_codigo(id):
         return redirect(url_for('donaciones.home'))
 
     codigo_ingresado = request.form.get('codigo', '').strip()
-    if datetime.utcnow() > transaccion.fechaExpiracion:
+    if datetime.now(timezone.utc).replace(tzinfo=None) > transaccion.fechaExpiracion:
         _expirar_transaccion(transaccion)
         flash('El código expiró. La donación volvió a estar disponible.', 'error')
         return redirect(url_for('donaciones.home'))
@@ -630,7 +628,11 @@ def confirmar_fecha(id):
     if not fecha_str:
         flash('Debés seleccionar una fecha de entrega.', 'error')
         return redirect(url_for('donaciones.coordinacion', id=id))
-    transaccion.fechaEntrega = datetime.strptime(fecha_str, '%Y-%m-%d')
+    try:
+        transaccion.fechaEntrega = datetime.strptime(fecha_str, '%Y-%m-%d')
+    except ValueError:
+        flash('El formato de la fecha no es válido.', 'error')
+        return redirect(url_for('donaciones.coordinacion', id=id))
     db.session.commit()
     flash('¡Fecha de entrega confirmada!', 'success')
     return redirect(url_for('donaciones.coordinacion', id=id))
@@ -796,10 +798,12 @@ def ajustes():
 
         foto = request.files.get('foto_perfil')
         foto_nombre = usuario.foto_perfil
-        if foto and foto.filename != '':
-            from werkzeug.utils import secure_filename
-            import os
-            ext = foto.filename.rsplit('.', 1)[-1].lower()
+        if foto and foto.filename:
+            foto_filename = foto.filename or ''
+            if foto_filename != '':
+                from werkzeug.utils import secure_filename
+                import os
+                ext = foto_filename.rsplit('.', 1)[-1].lower()
             if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
                 foto_nombre = secure_filename(foto.filename)
                 foto.save(os.path.join(current_app.root_path, 'static', 'fotos', foto_nombre))

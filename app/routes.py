@@ -1,10 +1,9 @@
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash, current_app
 from flask_mail import Message
 from app.extensions import db, mail
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from app.models import EstadoPeticion, Peticion, Usuario, Categoria, Campana, EstadoCampana, OfertaCampana, Transaccion, EstadoTransaccion, Notificacion
 from app.auth.routes import login_requerido, requiere_admin
-import random
 
 campana_bp = Blueprint('campana', __name__)
 @campana_bp.route('/campana/solicitar_campana', methods=['GET', 'POST'])
@@ -152,7 +151,7 @@ def rechazar_peticion(id):
     except Exception as e:
         print(f'[MAIL ERROR] {e}')
 
-    flash('Solicitud rechazada correctamente.', 'error')
+    flash('Solicitud rechazada correctamente.', 'success')
     return redirect(url_for('campana.gestionar_campanas'))
 
 @campana_bp.route('/campana/publicar', methods=['GET', 'POST'])
@@ -190,9 +189,13 @@ def publicar_campana():
             errores['fecha_fin'] = 'La fecha de finalización es obligatoria.'
         else:
             from datetime import date
-            fecha = date.fromisoformat(fecha_fin)
-            if fecha <= date.today():
-                errores['fecha_fin'] = 'La fecha de finalización debe ser posterior al día de hoy.'
+            try:
+                fecha = date.fromisoformat(fecha_fin)
+            except ValueError:
+                errores['fecha_fin'] = 'El formato de la fecha no es válido.'
+            else:
+                if fecha <= date.today():
+                    errores['fecha_fin'] = 'La fecha de finalización debe ser posterior al día de hoy.'
 
         if errores:
             return render_template(
@@ -205,16 +208,18 @@ def publicar_campana():
 
         foto_nombre = None
         foto = request.files.get('foto')
-        if foto and foto.filename != '':
-            from werkzeug.utils import secure_filename
-            import os
-            ext = foto.filename.rsplit('.', 1)[-1].lower()
-            if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
-                foto_nombre = secure_filename(foto.filename)
-                from flask import current_app
-                carpeta = current_app.config['UPLOAD_FOLDER']
-                os.makedirs(carpeta, exist_ok=True)
-                foto.save(os.path.join(carpeta, foto_nombre))
+        if foto and foto.filename:
+            foto_filename = foto.filename or ''
+            if foto_filename != '':
+                from werkzeug.utils import secure_filename
+                import os
+                ext = foto_filename.rsplit('.', 1)[-1].lower()
+                if ext in {'png', 'jpg', 'jpeg', 'gif', 'webp'}:
+                    foto_nombre = secure_filename(foto_filename)
+                    from flask import current_app
+                    carpeta = current_app.config['UPLOAD_FOLDER']
+                    os.makedirs(carpeta, exist_ok=True)
+                    foto.save(os.path.join(carpeta, foto_nombre))
 
         nueva_campana = Campana(
             titulo=titulo,
@@ -242,23 +247,7 @@ def publicar_campana():
     )
 
 
-def generar_codigo_transaccion():
-    nums = [random.randint(100, 999) for _ in range(3)]
-    return f'{nums[0]}-{nums[1]}-{nums[2]}'
-
-
-def tiempo_transcurrido(fecha):
-    diff = datetime.utcnow() - fecha
-    minutos = diff.seconds // 60
-    horas = diff.seconds // 3600
-    dias = diff.days
-    if dias > 0:
-        return f'Hace {dias} día{"s" if dias > 1 else ""}'
-    elif horas > 0:
-        return f'Hace {horas} hora{"s" if horas > 1 else ""}'
-    elif minutos > 0:
-        return f'Hace {minutos} minuto{"s" if minutos > 1 else ""}'
-    return 'Hace un momento'
+from app.utils import generar_codigo_transaccion, tiempo_transcurrido
 
 
 # ─── DETALLE CAMPAÑA ──────────────────────────────────────
@@ -267,8 +256,9 @@ def tiempo_transcurrido(fecha):
 def detalle_campana(id):
     campana = Campana.query.get_or_404(id)
     creador = Usuario.query.get(campana.codUsuario)
+    usuario = Usuario.query.get(session['usuario_id'])
     return render_template('campana/detalle_campana.html',
-        campana=campana, creador=creador)
+        campana=campana, creador=creador, usuario=usuario)
 
 
 # ─── OFRECER AYUDA ────────────────────────────────────────
@@ -317,7 +307,7 @@ def ofrecer_ayuda(id):
             codigo = generar_codigo_transaccion()
             nueva_transaccion = Transaccion(
                 codigoVerif=codigo,
-                fechaExpiracion=datetime.utcnow() + timedelta(hours=24),
+                fechaExpiracion=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=24),
                 codPublicacion=None,
                 codDonante=campana.codUsuario,
                 codBeneficiario=usuario.codUsuario,
@@ -359,7 +349,7 @@ def ofrecer_ayuda(id):
 
     return render_template('campana/ofrecer_ayuda.html',
         campana=campana, unidades_restantes=unidades_restantes,
-        ya_ofrecio=ya_ofrecio, errores=errores)
+        ya_ofrecio=ya_ofrecio, errores=errores, usuario=usuario)
 
 
 # ─── MIS OFERTAS DE CAMPAÑA ───────────────────────────────
@@ -427,7 +417,7 @@ def verificar_codigo_campana(id):
         return redirect(url_for('donaciones.home'))
 
     codigo_ingresado = request.form.get('codigo', '').strip()
-    if datetime.utcnow() > transaccion.fechaExpiracion:
+    if datetime.now(timezone.utc).replace(tzinfo=None) > transaccion.fechaExpiracion:
         _expirar_transaccion_campana(transaccion)
         flash('El código expiró. La oferta fue cancelada.', 'error')
         return redirect(url_for('donaciones.home'))

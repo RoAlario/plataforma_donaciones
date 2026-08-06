@@ -6,10 +6,12 @@ Flask-Mail==0.10.0
 Flask-SQLAlchemy==3.1.1
 fpdf2==2.8.3
 greenlet==3.5.1
+matplotlib==3.11.1
 itsdangerous==2.2.0
 Jinja2==3.1.6
 MarkupSafe==3.0.3
 python-dotenv==1.2.2
+pytest==9.1.1
 SQLAlchemy==2.0.50
 typing_extensions==4.15.0
 Werkzeug==3.1.8

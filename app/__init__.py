@@ -3,11 +3,11 @@ from flask import Flask
 from app.extensions import db, mail
 from dotenv import load_dotenv
 
-def create_app():
+def create_app(test_config=None):
     load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.env')) 
     app = Flask(__name__)
 
-    app.secret_key = os.environ['SECRET_KEY']
+    app.secret_key = os.environ.get('SECRET_KEY', 'clave-secreta-temporal-cambiar')
     app.config['UPLOAD_FOLDER'] = os.path.join('app', 'static', 'fotos')
     app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///donaciones.db'
@@ -18,6 +18,9 @@ def create_app():
     app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+
+    if test_config:
+        app.config.update(test_config)
 
     db.init_app(app)
     mail.init_app(app)

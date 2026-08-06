@@ -111,6 +111,9 @@ def verificar():
         codigo_ingresado = ''.join(digitos)
         if codigo_ingresado == pendiente['codigo']:
             rol_usuario = Rol.query.filter_by(nombre='Usuario').first()
+            if not rol_usuario:
+                flash('Error interno. Intentá registrarte de nuevo.', 'error')
+                return redirect(url_for('auth.registro'))
             nuevo = Usuario(
                 nombre=pendiente['nombre'], email=pendiente['email'],
                 telefono=pendiente['telefono'], ubicacion=pendiente['ubicacion'],
