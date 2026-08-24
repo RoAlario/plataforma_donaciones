@@ -4,7 +4,7 @@ from flask import jsonify
 from app.extensions import db, mail
 from app.models import (Publicacion, Categoria, Usuario, EstadoPublicacion, Direccion,
                          SolicitudDonacion, EstadoSolicitudDonacion, Notificacion, Transaccion, EstadoTransaccion)
-from app.auth.routes import login_requerido
+from app.auth.routes import login_requerido, es_telefono_formato, es_telefono_valido
 from datetime import datetime, timedelta, timezone
 
 donaciones_bp = Blueprint('donaciones', __name__)
@@ -784,6 +784,10 @@ def ajustes():
             errores['nombre'] = 'El nombre es obligatorio.'
         if not telefono:
             errores['telefono'] = 'El teléfono es obligatorio.'
+        elif not es_telefono_formato(telefono):
+            errores['telefono'] = 'El teléfono solo debe contener números.'
+        elif not es_telefono_valido(telefono):
+            errores['telefono'] = 'El teléfono debe tener entre 7 y 14 dígitos.'
 
         if contra_nueva:
             from werkzeug.security import check_password_hash, generate_password_hash

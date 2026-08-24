@@ -21,8 +21,11 @@ def generar_codigo():
 def es_email_valido(email):
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w{2,}$', email)
 
+def es_telefono_formato(tel):
+    return re.match(r'^\d+$', tel) is not None
+
 def es_telefono_valido(tel):
-    return re.match(r'^\d{7,14}$', tel)
+    return 7 <= len(tel) <= 14
 
 def enviar_email(destinatario, asunto, cuerpo):
     from flask import current_app
@@ -54,7 +57,11 @@ def registro():
             errores['email'] = 'El formato del email no es válido.'
         elif Usuario.query.filter_by(email=email).first():
             errores['email'] = 'El correo electrónico ingresado ya se encuentra vinculado a una cuenta activa.'
-        if not telefono or not es_telefono_valido(telefono):
+        if not telefono:
+            errores['telefono'] = 'El teléfono es obligatorio.'
+        elif not es_telefono_formato(telefono):
+            errores['telefono'] = 'El teléfono solo debe contener números.'
+        elif not es_telefono_valido(telefono):
             errores['telefono'] = 'El teléfono debe tener entre 7 y 14 dígitos.'
         elif Usuario.query.filter_by(telefono=telefono).first():
             errores['telefono'] = 'El número de teléfono ingresado ya se encuentra vinculado a una cuenta activa.'

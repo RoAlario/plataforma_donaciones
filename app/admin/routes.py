@@ -275,20 +275,22 @@ def exportar_pdf():
     ax.set_xticks(x)
     ax.set_xticklabels(dias)
     ax.legend()
-    ax.set_ylim(bottom=0)
+    max_val = max(max(donaciones_por_dia, default=0), max(campañas_por_dia, default=0))
+    ax.set_ylim(bottom=0, top=max(max_val + 1, 1))
     ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
+    ax.yaxis.set_major_formatter(plt.FormatStrFormatter('%d'))
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
     for barra in barras_don:
         h = barra.get_height()
         if h > 0:
-            ax.text(barra.get_x() + barra.get_width()/2., h, f'{int(h)}',
+            ax.text(barra.get_x() + barra.get_width()/2., h, f'{int(round(h))}',
                     ha='center', va='bottom', fontsize=9)
     for barra in barras_camp:
         h = barra.get_height()
         if h > 0:
-            ax.text(barra.get_x() + barra.get_width()/2., h, f'{int(h)}',
+            ax.text(barra.get_x() + barra.get_width()/2., h, f'{int(round(h))}',
                     ha='center', va='bottom', fontsize=9)
 
     plt.tight_layout()
@@ -301,23 +303,71 @@ def exportar_pdf():
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
 
+    # Logo (izquierda, más chico)
+    import os
+    logo_path = os.path.join(os.path.dirname(__file__), '..', 'static', 'logo.png')
+    pdf.image(logo_path, x=10, y=10, w=20)
+    pdf.ln(20)
+
     # Título
-    pdf.set_font('Helvetica', 'B', 18)
-    pdf.cell(0, 12, 'Reporte de Actividad', new_x='LMARGIN', new_y='NEXT', align='C')
+    pdf.set_font('Helvetica', 'B', 16)
+    pdf.cell(0, 10, sanitize_pdf('Reporte de Actividad'), new_x='LMARGIN', new_y='NEXT', align='C')
+    pdf.set_font('Helvetica', '', 12)
+    pdf.cell(0, 8, sanitize_pdf('Sistema de Gestion de Donaciones'), new_x='LMARGIN', new_y='NEXT', align='C')
     pdf.set_font('Helvetica', '', 10)
     pdf.cell(0, 8, f'Generado: {hoy.strftime("%d/%m/%Y %H:%M")}', new_x='LMARGIN', new_y='NEXT', align='C')
     pdf.ln(10)
 
-    # Estadísticas generales
+    # Estadísticas generales - cajitas de colores
     pdf.set_font('Helvetica', 'B', 14)
     pdf.cell(0, 10, sanitize_pdf('Estadísticas del mes'), new_x='LMARGIN', new_y='NEXT')
-    pdf.set_font('Helvetica', '', 11)
-    pdf.cell(0, 8, sanitize_pdf(f'Total donaciones: {total_donaciones}'), new_x='LMARGIN', new_y='NEXT')
-    pdf.cell(0, 8, sanitize_pdf(f'Total campañas: {total_campañas}'), new_x='LMARGIN', new_y='NEXT')
-    pdf.cell(0, 8, sanitize_pdf(f'Campañas activas: {campañas_activas}'), new_x='LMARGIN', new_y='NEXT')
-    pdf.cell(0, 8, sanitize_pdf(f'Campañas finalizadas: {campañas_finalizadas}'), new_x='LMARGIN', new_y='NEXT')
-    pdf.cell(0, 8, f'Usuarios nuevos: {usuarios_nuevos}', new_x='LMARGIN', new_y='NEXT')
-    pdf.ln(8)
+    pdf.ln(3)
+
+    stats = [
+        (sanitize_pdf('Total donaciones'), str(int(total_donaciones)), (239, 177, 129)),
+        (sanitize_pdf('Total campañas'), str(int(total_campañas)), (108, 170, 176)),
+        (sanitize_pdf('Campañas activas'), str(int(campañas_activas)), (129, 199, 132)),
+        (sanitize_pdf('Campañas finalizadas'), str(int(campañas_finalizadas)), (255, 183, 77)),
+        (sanitize_pdf('Usuarios nuevos'), str(int(usuarios_nuevos)), (129, 140, 248)),
+    ]
+
+    box_w = 34
+    box_h = 22
+    gap = 4
+    row1 = stats[:3]
+    row2 = stats[3:]
+
+    # Fila 1: 3 cajas
+    total_w1 = len(row1) * box_w + (len(row1) - 1) * gap
+    start_x1 = (210 - total_w1) / 2
+    y = pdf.get_y()
+    for i, (label, value, color) in enumerate(row1):
+        x = start_x1 + i * (box_w + gap)
+        pdf.set_fill_color(*color)
+        pdf.rect(x, y, box_w, box_h, 'F')
+        pdf.set_font('Helvetica', 'B', 14)
+        pdf.set_xy(x, y + 3)
+        pdf.cell(box_w, 8, value, align='C')
+        pdf.set_font('Helvetica', '', 7)
+        pdf.set_xy(x, y + 12)
+        pdf.cell(box_w, 8, label, align='C')
+
+    # Fila 2: 2 cajas
+    total_w2 = len(row2) * box_w + (len(row2) - 1) * gap
+    start_x2 = (210 - total_w2) / 2
+    y2 = y + box_h + 4
+    for i, (label, value, color) in enumerate(row2):
+        x = start_x2 + i * (box_w + gap)
+        pdf.set_fill_color(*color)
+        pdf.rect(x, y2, box_w, box_h, 'F')
+        pdf.set_font('Helvetica', 'B', 14)
+        pdf.set_xy(x, y2 + 3)
+        pdf.cell(box_w, 8, value, align='C')
+        pdf.set_font('Helvetica', '', 7)
+        pdf.set_xy(x, y2 + 12)
+        pdf.cell(box_w, 8, label, align='C')
+
+    pdf.set_y(y2 + box_h + 6)
 
     # Actividad semanal (gráfico)
     pdf.set_font('Helvetica', 'B', 14)
@@ -328,13 +378,37 @@ def exportar_pdf():
     # Ranking top 10
     pdf.set_font('Helvetica', 'B', 14)
     pdf.cell(0, 10, 'Top 10 donantes del mes', new_x='LMARGIN', new_y='NEXT')
-    pdf.set_font('Helvetica', '', 10)
+    pdf.ln(2)
+
     if ranking:
-        pdf.cell(0, 8, '#    Nombre                 Email                          Donaciones', new_x='LMARGIN', new_y='NEXT')
+        col_w = [10, 45, 70, 30]
+        headers = ['#', 'Nombre', 'Email', 'Donaciones']
+
+        # Cabecera
+        pdf.set_fill_color(108, 170, 176)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font('Helvetica', 'B', 10)
+        for i, h in enumerate(headers):
+            pdf.cell(col_w[i], 9, h, border=0, align='C', fill=True)
+        pdf.ln()
+
+        # Filas
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font('Helvetica', '', 9)
         for idx, (nombre, email, total) in enumerate(ranking, 1):
-            pdf.cell(0, 7, sanitize_pdf(f'{idx:<5}{nombre:<23}{email:<33}{total}'),
-                     new_x='LMARGIN', new_y='NEXT')
+            if idx % 2 == 0:
+                pdf.set_fill_color(230, 240, 240)
+                fill = True
+            else:
+                pdf.set_fill_color(255, 255, 255)
+                fill = True
+            pdf.cell(col_w[0], 8, str(idx), border=0, align='C', fill=fill)
+            pdf.cell(col_w[1], 8, sanitize_pdf(nombre)[:22], border=0, align='L', fill=fill)
+            pdf.cell(col_w[2], 8, sanitize_pdf(email)[:35], border=0, align='L', fill=fill)
+            pdf.cell(col_w[3], 8, str(int(total)), border=0, align='C', fill=fill)
+            pdf.ln()
     else:
+        pdf.set_font('Helvetica', '', 11)
         pdf.cell(0, 8, sanitize_pdf('No hay donaciones registradas en el periodo.'), new_x='LMARGIN', new_y='NEXT')
 
     # Guardar en memoria
